@@ -1,0 +1,57 @@
+@page "/kullanici-yonetimi"
+
+<PageTitle>User Management</PageTitle>
+
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">User Management</h1>
+
+    <div class="border-b border-border-light dark:border-border-dark mb-6">
+        <nav class="flex gap-8 text-sm font-medium">
+            <button class='@GetTabClass("role")' @onclick='() => SetTab("role")'>Role Creation</button>
+            <button class='@GetTabClass("permissions")' @onclick='() => SetTab("permissions")'>Role Permission Management</button>
+            <button class='@GetTabClass("user")' @onclick='() => SetTab("user")'>User Creation</button>
+        </nav>
+    </div>
+
+    @if (activeTab == "role")
+    {
+        <div class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium mb-2">Role Name</label>
+                <input @bind="roleName" placeholder="Enter role name"
+                       class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Role Description</label>
+                <textarea @bind="roleDescription" rows="4" placeholder="Enter role description"
+                          class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"></textarea>
+            </div>
+            <div class="pt-2 flex justify-center">
+                <button class="rounded-md bg-primary text-white font-semibold px-6 py-2.5 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary">
+                    Create Role
+                </button>
+            </div>
+        </div>
+    }
+    else if (activeTab == "permissions")
+    {
+        <div class="text-sm text-subtext-light dark:text-subtext-dark">Permission management coming soon.</div>
+    }
+    else
+    {
+        <div class="text-sm text-subtext-light dark:text-subtext-dark">User creation coming soon.</div>
+    }
+</div>
+
+@code {
+    string activeTab = "role";
+    string? roleName;
+    string? roleDescription;
+
+    string GetTabClass(string tab) =>
+        (activeTab == tab)
+            ? "pb-2 -mb-[1px] text-primary border-b-2 border-primary"
+            : "pb-2 text-subtext-light dark:text-subtext-dark hover:text-primary";
+
+    void SetTab(string tab) => activeTab = tab;
+}
