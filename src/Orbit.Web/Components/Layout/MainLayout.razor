@@ -48,12 +48,12 @@
     <div class="flex min-h-screen">
         <!-- Sidebar -->
         <aside class="@($"{AsideWidthClass} bg-content-light/95 dark:bg-content-dark/95 backdrop-blur flex flex-col fixed h-full border-r border-border-light dark:border-border-dark transition-all duration-200")">
-            <div class="px-4 py-4 border-b border-border-light dark:border-border-dark flex items-center justify-between">
-                <div class="flex items-center gap-2">
+            <div class="@($"px-3 py-3 border-b border-border-light dark:border-border-dark flex items-center {HeaderJustifyClass}")">
+                <div class="items-center gap-2 @(isCollapsed ? "hidden" : "flex")">
                     <div class="h-7 w-7 rounded-md bg-primary/10 text-primary grid place-items-center">O</div>
-                    <h1 class="text-xl font-bold text-primary @(isCollapsed ? "hidden" : "block")">Orbit CRM</h1>
+                    <h1 class="text-xl font-bold text-primary">Orbit CRM</h1>
                 </div>
-                <button class="p-2 rounded hover:bg-primary/10 dark:hover:bg-primary/20" @onclick="ToggleMenu" aria-label="Toggle menu">
+                <button class="p-2 rounded hover:bg-primary/10 dark:hover:bg-primary/20" @onclick="ToggleMenu" aria-label="Menüyü aç/kapat">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8 12H16M8 7H16M8 17H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
@@ -81,12 +81,10 @@
                 <button title="Tema Değiştir" aria-label="Tema Değiştir"
                         class="w-full flex items-center justify-center rounded-md p-2 border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20"
                         onclick="document.documentElement.classList.toggle('dark')">
-                    <!-- Sun icon (light mode) -->
                     <svg class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="4"></circle>
                         <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
                     </svg>
-                    <!-- Moon icon (dark mode) -->
                     <svg class="h-5 w-5 hidden dark:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
                     </svg>
@@ -120,8 +118,10 @@
 
     string AsideWidthClass => isCollapsed ? "w-16" : "w-64";
     string MainMarginClass => isCollapsed ? "ml-16" : "ml-64";
+    string HeaderJustifyClass => isCollapsed ? "justify-center" : "justify-between";
     string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20 ring-1 ring-primary/20";
     string NavItemClass => $"group relative flex items-center {(isCollapsed ? "justify-center " : string.Empty)}gap-3 px-3.5 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 transition-colors";
 
     void ToggleMenu() => isCollapsed = !isCollapsed;
 }
+
