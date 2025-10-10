@@ -46,31 +46,64 @@
 
 <div class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
     <div class="flex min-h-screen">
-        <aside class="@($"{AsideWidthClass} bg-content-light dark:bg-content-dark flex flex-col fixed h-full border-r border-border-light dark:border-border-dark transition-all duration-200")">
+        <!-- Sidebar -->
+        <aside class="@($"{AsideWidthClass} bg-content-light/95 dark:bg-content-dark/95 backdrop-blur flex flex-col fixed h-full border-r border-border-light dark:border-border-dark transition-all duration-200")">
             <div class="px-4 py-4 border-b border-border-light dark:border-border-dark flex items-center justify-between">
-                <h1 class="text-xl font-bold text-primary @(isCollapsed ? "hidden" : "block")">CRM Pro</h1>
+                <div class="flex items-center gap-2">
+                    <div class="h-7 w-7 rounded-md bg-primary/10 text-primary grid place-items-center">O</div>
+                    <h1 class="text-xl font-bold text-primary @(isCollapsed ? "hidden" : "block")">Orbit CRM</h1>
+                </div>
                 <button class="p-2 rounded hover:bg-primary/10 dark:hover:bg-primary/20" @onclick="ToggleMenu" aria-label="Toggle menu">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 12L16 12M8 7H16M8 17H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M8 12H16M8 7H16M8 17H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
                 </button>
             </div>
-            <nav class="flex-1 p-4 space-y-2">
-                <NavLink href="/" class="@NavItemClass" ActiveClass="@ActiveNavClass" Match="NavLinkMatch.All">
-                    <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48a16,16,0,0,1,21.66,0l80,75.48A16,16,0,0,1,224,115.55Z"></path>
-                    </svg>
-                    <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Anasayfa</span>
+            <nav class="flex-1 p-3 space-y-1">
+                <NavLink href="/" title="Anasayfa" class="@NavItemClass" ActiveClass="@ActiveNavClass" Match="NavLinkMatch.All">
+                    <span class="relative flex items-center gap-3">
+                        <svg class="shrink-0" fill="currentColor" height="22" viewBox="0 0 256 256" width="22" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48a16,16,0,0,1,21.66,0l80,75.48A16,16,0,0,1,224,115.55Z"></path>
+                        </svg>
+                        <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Anasayfa</span>
+                    </span>
                 </NavLink>
-                <NavLink href="/kullanici-yonetimi" class="@NavItemClass" ActiveClass="@ActiveNavClass">
-                    <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
-                    </svg>
-                    <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Kullanıcı Yönetimi</span>
+                <NavLink href="/kullanici-yonetimi" title="Kullanıcı Yönetimi" class="@NavItemClass" ActiveClass="@ActiveNavClass">
+                    <span class="relative flex items-center gap-3">
+                        <svg class="shrink-0" fill="currentColor" height="22" viewBox="0 0 256 256" width="22" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
+                        </svg>
+                        <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Kullanıcı Yönetimi</span>
+                    </span>
                 </NavLink>
             </nav>
+            <div class="p-3 border-t border-border-light dark:border-border-dark">
+                <button title="Tema Değiştir" aria-label="Tema Değiştir"
+                        class="w-full flex items-center justify-center rounded-md p-2 border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20"
+                        onclick="document.documentElement.classList.toggle('dark')">
+                    <!-- Sun icon (light mode) -->
+                    <svg class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                    </svg>
+                    <!-- Moon icon (dark mode) -->
+                    <svg class="h-5 w-5 hidden dark:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+                    </svg>
+                    <span class="sr-only">Tema Değiştir</span>
+                </button>
+            </div>
         </aside>
-        <main class="@($"{MainMarginClass} flex-1 p-8 transition-all duration-200")">
+
+        <!-- Main -->
+        <main class="@($"{MainMarginClass} flex-1 p-6 transition-all duration-200")">
+            <header class="mb-6 bg-content-light/80 dark:bg-content-dark/80 backdrop-blur border border-border-light dark:border-border-dark rounded-lg px-4 py-3 flex items-center gap-3">
+                <div class="flex-1 text-sm text-subtext-light dark:text-subtext-dark">Hoş geldiniz 👋</div>
+                <div class="hidden md:flex items-center gap-2">
+                    <input type="search" placeholder="Ara..." class="w-56 rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+                    <button class="rounded-md px-3 py-1.5 text-sm bg-primary text-white hover:bg-primary/90">Ara</button>
+                </div>
+            </header>
             @Body
         </main>
     </div>
@@ -87,9 +120,8 @@
 
     string AsideWidthClass => isCollapsed ? "w-16" : "w-64";
     string MainMarginClass => isCollapsed ? "ml-16" : "ml-64";
-    string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20";
-    string NavItemClass => $"flex items-center {(isCollapsed ? "justify-center " : string.Empty)}gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20";
+    string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20 ring-1 ring-primary/20";
+    string NavItemClass => $"group relative flex items-center {(isCollapsed ? "justify-center " : string.Empty)}gap-3 px-3.5 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 transition-colors";
 
     void ToggleMenu() => isCollapsed = !isCollapsed;
 }
-

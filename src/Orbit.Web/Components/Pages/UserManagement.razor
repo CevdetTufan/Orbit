@@ -2,20 +2,18 @@
 
 <PageTitle>User Management</PageTitle>
 
-<div class="max-w-5xl mx-auto">
+<div class="max-w-6xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">User Management</h1>
 
-    <div class="border-b border-border-light dark:border-border-dark mb-6">
-        <nav class="flex gap-8 text-sm font-medium">
-            <button class='@GetTabClass("role")' @onclick='() => SetTab("role")'>Role Creation</button>
-            <button class='@GetTabClass("permissions")' @onclick='() => SetTab("permissions")'>Role Permission Management</button>
-            <button class='@GetTabClass("user")' @onclick='() => SetTab("user")'>User Creation</button>
-        </nav>
+    <div class="mb-6 flex items-center gap-2">
+        <button class='@GetTabClass("role")' @onclick='() => SetTab("role")'>Role Creation</button>
+        <button class='@GetTabClass("permissions")' @onclick='() => SetTab("permissions")'>Role Permission Management</button>
+        <button class='@GetTabClass("user")' @onclick='() => SetTab("user")'>User Creation</button>
     </div>
 
     @if (activeTab == "role")
     {
-        <div class="space-y-6">
+        <div class="space-y-6 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6 shadow-sm">
             <div>
                 <label class="block text-sm font-medium mb-2">Role Name</label>
                 <input @bind="roleName" placeholder="Enter role name"
@@ -35,11 +33,11 @@
     }
     else if (activeTab == "permissions")
     {
-        <div class="text-sm text-subtext-light dark:text-subtext-dark">Permission management coming soon.</div>
+        <div class="text-sm text-subtext-light dark:text-subtext-dark bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">Permission management coming soon.</div>
     }
     else
     {
-        <div class="text-sm text-subtext-light dark:text-subtext-dark">User creation coming soon.</div>
+        <div class="text-sm text-subtext-light dark:text-subtext-dark bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">User creation coming soon.</div>
     }
 </div>
 
@@ -48,10 +46,10 @@
     string? roleName;
     string? roleDescription;
 
-    string GetTabClass(string tab) =>
-        (activeTab == tab)
-            ? "pb-2 -mb-[1px] text-primary border-b-2 border-primary"
-            : "pb-2 text-subtext-light dark:text-subtext-dark hover:text-primary";
+    string GetTabClass(string tab)
+        => (activeTab == tab)
+            ? "inline-flex items-center gap-2 rounded-md bg-primary/10 text-primary px-3 py-2 text-sm"
+            : "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-subtext-light dark:text-subtext-dark hover:bg-primary/10 hover:text-primary";
 
     void SetTab(string tab) => activeTab = tab;
 }
