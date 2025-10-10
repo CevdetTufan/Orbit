@@ -113,6 +113,7 @@
     <span class="dismiss">??</span>
   </div>
 
+@inject IJSRuntime JS
 @code {
     bool isCollapsed = false;
 
@@ -122,5 +123,35 @@
     string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20 ring-1 ring-primary/20";
     string NavItemClass => $"group relative flex items-center {(isCollapsed ? "justify-center " : string.Empty)}gap-3 px-3.5 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 transition-colors";
 
-    void ToggleMenu() => isCollapsed = !isCollapsed;
+    async Task PersistSidebarAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "sidebar", isCollapsed ? "collapsed" : "expanded");
+        }
+        catch { }
+    }
+
+    async Task ToggleMenu()
+    {
+        isCollapsed = !isCollapsed;
+        await PersistSidebarAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var saved = await JS.InvokeAsync<string>("localStorage.getItem", "sidebar");
+                if (!string.IsNullOrEmpty(saved))
+                {
+                    isCollapsed = string.Equals(saved, "collapsed", StringComparison.OrdinalIgnoreCase);
+                    StateHasChanged();
+                }
+            }
+            catch { }
+        }
+    }
 }
