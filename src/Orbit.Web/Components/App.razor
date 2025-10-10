@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Orbit.Web.styles.css"]" />
     <ImportMap />
+    <script>
+        // Initialize theme from localStorage or system preference (runs before render)
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var useDark = saved ? (saved === 'dark') : prefersDark;
+                document.documentElement.classList.toggle('dark', useDark);
+                document.documentElement.style.colorScheme = useDark ? 'dark' : 'light';
+            } catch (e) { /* no-op */ }
+        })();
+    </script>
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
