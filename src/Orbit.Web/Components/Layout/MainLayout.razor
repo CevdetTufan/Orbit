@@ -1,0 +1,79 @@
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1173d4",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "content-light": "#ffffff",
+                        "content-dark": "#18232e",
+                        "text-light": "#101922",
+                        "text-dark": "#f6f7f8",
+                        "subtext-light": "#6b7280",
+                        "subtext-dark": "#9ca3af",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#374151",
+                        success: "#10b981",
+                        danger: "#ef4444"
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        lg: "0.75rem",
+                        xl: "1rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .group:hover .group-hover\:block { display: block; }
+    </style>
+    <title>Orbit CRM</title>
+  </HeadContent>
+
+<div class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-content-light dark:bg-content-dark flex flex-col fixed h-full border-r border-border-light dark:border-border-dark">
+            <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                <h1 class="text-xl font-bold text-primary">CRM Pro</h1>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <NavLink href="/" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20" ActiveClass="bg-primary/10 text-primary dark:bg-primary/20" Match="NavLinkMatch.All">
+                    <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48a16,16,0,0,1,21.66,0l80,75.48A16,16,0,0,1,224,115.55Z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Anasayfa</span>
+                </NavLink>
+                <NavLink href="#" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20">
+                    <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Kullanıcı Yönetimi</span>
+                </NavLink>
+            </nav>
+        </aside>
+        <main class="ml-64 flex-1 p-8">
+            @Body
+        </main>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">??</span>
+  </div>
+
