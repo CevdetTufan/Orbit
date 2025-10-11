@@ -24,6 +24,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Orbit.Web.Security.CircuitAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<Orbit.Web.Security.CircuitAuthenticationStateProvider>());
+// Request context for audit logging
+builder.Services.AddScoped<Orbit.Application.Auth.IClientContext, Orbit.Web.Security.HttpRequestContext>();
 
 // JWT Bearer authentication
 builder.Services
@@ -71,5 +73,18 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+using (var scope = app.Services.CreateScope())
+{
+	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+	db.Database.Migrate();
+
+	// Seed sample data in Development
+	if (app.Environment.IsDevelopment())
+	{
+		var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+		await seeder.SeedAsync();
+	}
+}
 
 await app.RunAsync();

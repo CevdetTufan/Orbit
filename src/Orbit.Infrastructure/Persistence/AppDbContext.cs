@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Users;
+using Orbit.Domain.Security;
 
 namespace Orbit.Infrastructure.Persistence;
 
@@ -13,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
