@@ -88,6 +88,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Auth: logout endpoint for full HTTP navigation sign-out
+app.MapGet("/logout", async (HttpContext http) =>
+{
+    await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
+}).DisableAntiforgery();
+
 // No public minimal API endpoints; app is not an API surface.
 
 await app.RunAsync();
