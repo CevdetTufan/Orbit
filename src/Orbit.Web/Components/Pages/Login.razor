@@ -1,47 +1,17 @@
 @page "/login"
 @layout Layout.BlankLayout
 @attribute [AllowAnonymous]
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject Orbit.Application.Auth.IAuthService Auth
+@inject NavigationManager Nav
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
 
 <HeadContent>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1173d4",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                        "neutral-light": "#ffffff",
-                        "neutral-dark": "#1f2937",
-                        "text-light": "#1f2937",
-                        "text-dark": "#f9fafb",
-                        "subtext-light": "#6b7280",
-                        "subtext-dark": "#9ca3af",
-                        "border-light": "#e5e7eb",
-                        "border-dark": "#374151",
-                    },
-                    fontFamily: {
-                        display: ["Inter", "sans-serif"],
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.5rem",
-                        lg: "0.75rem",
-                        xl: "1rem",
-                        full: "9999px",
-                    },
-                },
-            },
-        };
-    </script>
-    <style>
-        .form-input::placeholder { color: #9ca3af; }
-        .dark .form-input::placeholder { color: #6b7280; }
-    </style>
 </HeadContent>
 
 <div class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 to-transparent">
@@ -64,19 +34,31 @@
                         <p class="mt-2 text-sm text-subtext-light dark:text-subtext-dark">Sign in to continue to your dashboard.</p>
                     </div>
 
-                    <form class="mt-8 space-y-6" method="post" action="/api/auth/login">
+                    <EditForm class="mt-8 space-y-6" Model="login" OnValidSubmit="HandleLoginAsync" formname="login">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger italic text-xs" />
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="rounded-md border border-danger/30 bg-danger/10 text-danger px-3 py-2 text-sm">
+                                @errorMessage
+                            </div>
+                        }
+
                         <div class="space-y-4 rounded-md">
                             <div>
                                 <label class="sr-only" for="username">Username</label>
-                                <input id="username" name="username" type="text" required
-                                       placeholder="Username"
-                                       class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <InputText id="username" @bind-Value="login.Username"
+                                           placeholder="Username"
+                                           class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <ValidationMessage For="() => login.Username" class="text-danger italic text-xs mt-1" />
                             </div>
                             <div>
                                 <label class="sr-only" for="password">Password</label>
-                                <input id="password" name="password" type="password" autocomplete="current-password" required
-                                       placeholder="Password"
-                                       class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <InputText id="password" @bind-Value="login.Password" type="password" autocomplete="current-password"
+                                           placeholder="Password"
+                                           class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <ValidationMessage For="() => login.Password" class="text-danger italic text-xs mt-1" />
                             </div>
                         </div>
 
@@ -87,14 +69,53 @@
                         </div>
 
                         <div>
-                            <button type="submit"
+                            <button type="submit" disabled="@isLoading"
                                     class="group relative flex w-full justify-center rounded-md border border-transparent bg-primary py-3 px-4 text-sm font-semibold text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark transition-colors">
-                                Log In
+                                @(isLoading ? "Giriş yapılıyor..." : "Log In")
                             </button>
                         </div>
-                    </form>
+                    </EditForm>
                 </div>
             </div>
         </main>
     </div>
 </div>
+
+@code {
+    private readonly LoginModel login = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleLoginAsync()
+    {
+        errorMessage = null;
+        isLoading = true;
+        try
+        {
+            var token = await Auth.LoginAsync(login.Username, login.Password);
+            await CircuitAuth.SignInAsync(token);
+            Nav.NavigateTo("/");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            errorMessage = "Kullanıcı adı veya şifre hatalı.";
+        }
+        catch
+        {
+            errorMessage = "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private sealed class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
+        public string Username { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Şifre zorunludur.")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

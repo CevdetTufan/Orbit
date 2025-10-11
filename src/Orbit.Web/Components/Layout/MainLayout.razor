@@ -4,43 +4,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1173d4",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                        "content-light": "#ffffff",
-                        "content-dark": "#18232e",
-                        "text-light": "#101922",
-                        "text-dark": "#f6f7f8",
-                        "subtext-light": "#6b7280",
-                        "subtext-dark": "#9ca3af",
-                        "border-light": "#e5e7eb",
-                        "border-dark": "#374151",
-                        success: "#10b981",
-                        danger: "#ef4444"
-                    },
-                    fontFamily: {
-                        display: ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.5rem",
-                        lg: "0.75rem",
-                        xl: "1rem",
-                        full: "9999px"
-                    }
-                }
-            }
-        };
-    </script>
-    <style>
-        .group:hover .group-hover\:block { display: block; }
-    </style>
     <title>Orbit CRM</title>
   </HeadContent>
 
@@ -101,6 +64,27 @@
                     <input type="search" placeholder="Ara..." class="w-56 rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
                     <button class="rounded-md px-3 py-1.5 text-sm bg-primary text-white hover:bg-primary/90">Ara</button>
                 </div>
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="relative">
+                            <button class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20" @onclick="ToggleAccount">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>@(DisplayName ?? "Hesap")</span>
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-44 rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark shadow-lg z-10 @(isAccountOpen ? "block" : "hidden")">
+                                <button class="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 dark:hover:bg-primary/20" @onclick="GoToAccount">Hesabım</button>
+                                <button class="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger/10" @onclick="LogoutAsync">Çıkış</button>
+                            </div>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <NavLink href="/login" class="rounded-md px-3 py-1.5 text-sm border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20">Giriş</NavLink>
+                    </NotAuthorized>
+                </AuthorizeView>
             </header>
             @Body
         </main>
@@ -114,8 +98,23 @@
   </div>
 
 @inject IJSRuntime JS
+@inject NavigationManager Nav
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
 @code {
     bool isCollapsed = false;
+    bool isAccountOpen = false;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    ClaimsPrincipal? CurrentUser;
+
+    string? DisplayName => CurrentUser?.Identity?.IsAuthenticated == true
+        ? (CurrentUser!.FindFirst(ClaimTypes.Name)?.Value ?? "Hesap")
+        : null;
 
     string AsideWidthClass => isCollapsed ? "w-16" : "w-64";
     string MainMarginClass => isCollapsed ? "ml-16" : "ml-64";
@@ -138,6 +137,21 @@
         await PersistSidebarAsync();
     }
 
+    void ToggleAccount() => isAccountOpen = !isAccountOpen;
+
+    void GoToAccount()
+    {
+        isAccountOpen = false;
+        Nav.NavigateTo("/hesabim");
+    }
+
+    async Task LogoutAsync()
+    {
+        isAccountOpen = false;
+        await CircuitAuth.SignOutAsync();
+        Nav.NavigateTo("/login");
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -150,6 +164,19 @@
                     isCollapsed = string.Equals(saved, "collapsed", StringComparison.OrdinalIgnoreCase);
                     StateHasChanged();
                 }
+            }
+            catch { }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthStateTask != null)
+        {
+            try
+            {
+                var state = await AuthStateTask;
+                CurrentUser = state.User;
             }
             catch { }
         }

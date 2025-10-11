@@ -15,8 +15,9 @@ internal sealed class PermissionConfiguration : IEntityTypeConfiguration<Permiss
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.HasIndex(p => p.Code).IsUnique();
+
         builder.Property(p => p.Description)
             .HasMaxLength(500);
     }
 }
-

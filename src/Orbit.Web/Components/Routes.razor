@@ -1,13 +1,53 @@
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
+@inject NavigationManager Nav
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <CascadingAuthenticationState>
-            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-                <NotAuthorized>
-                    <RedirectToLogin />
-                </NotAuthorized>
-            </AuthorizeRouteView>
-            <FocusOnNavigate RouteData="routeData" Selector="h1" />
-        </CascadingAuthenticationState>
+        @if (!_readyToRender)
+        {
+            <text></text>
+        }
+        else
+        {
+            <CascadingAuthenticationState>
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </CascadingAuthenticationState>
+        }
     </Found>
 </Router>
 
+@code {
+    private bool _readyToRender;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CircuitAuth.RestoreAsync();
+            var state = await CircuitAuth.GetAuthenticationStateAsync();
+            var isAuth = state.User?.Identity?.IsAuthenticated == true;
+
+            var uri = new Uri(Nav.Uri);
+            var path = uri.AbsolutePath.TrimEnd('/');
+            var onLogin = string.Equals(path, "/login", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAuth && !onLogin)
+            {
+                Nav.NavigateTo("/login", forceLoad: true, replace: true);
+                // Wait until navigation; don’t render current route to avoid flash
+                _readyToRender = false;
+            }
+            else
+            {
+                _readyToRender = true;
+                StateHasChanged();
+            }
+        }
+    }
+}

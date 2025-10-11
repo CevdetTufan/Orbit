@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Small helpers that were inline before */
+.group:hover .group-hover\:block { display: block; }
+
