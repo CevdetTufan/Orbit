@@ -9,11 +9,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.5.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Orbit.Application\Orbit.Application.csproj" />
     <ProjectReference Include="..\Orbit.Domain\Orbit.Domain.csproj" />
   </ItemGroup>
 
 </Project>
-

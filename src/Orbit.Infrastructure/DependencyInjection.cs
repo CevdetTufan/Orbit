@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Orbit.Application.Auth;
 using Orbit.Domain.Common;
 using Orbit.Infrastructure.Persistence;
+using Orbit.Infrastructure.Persistence.Entities;
 using Orbit.Infrastructure.Persistence.Repositories;
+using Orbit.Infrastructure.Security;
 
 namespace Orbit.Infrastructure;
 
@@ -22,7 +25,17 @@ public static class DependencyInjection
         services.AddScoped(typeof(IWriteRepository<,>), typeof(EfRepository<,>));
         services.AddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
 
+        // Security services
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IUserCredentialStore, UserCredentialStore>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddJwt(this IServiceCollection services, Action<JwtOptions> configure)
+    {
+        services.Configure(configure);
+        services.AddSingleton<ITokenService, TokenService>();
         return services;
     }
 }
-

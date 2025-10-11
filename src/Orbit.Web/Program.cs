@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
 using Orbit.Application.Users;
@@ -6,6 +7,7 @@ using Orbit.Domain.Users;
 using Orbit.Infrastructure;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Web.Components;
+using Orbit.Web.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,26 @@ builder.Services.AddRazorComponents()
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddJwt(o => builder.Configuration.GetSection("Jwt").Bind(o));
+
+// JWT Bearer authentication
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwt = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new()
+        {
+            ValidIssuer = jwt["Issuer"],
+            ValidAudience = jwt["Audience"],
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwt["SigningKey"]!))
+        };
+    });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -32,6 +54,9 @@ app.UseHttpsRedirection();
 
 
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
@@ -49,19 +74,33 @@ app.MapGet("/api/users", async (IUserQueries queries, CancellationToken ct) =>
 {
     var users = await queries.GetAllAsync(ct);
     return Results.Ok(users);
-});
+}).RequireAuthorization();
 
 app.MapPost("/api/users", async (IUserCommands users, string username, string email, CancellationToken ct) =>
 {
     var id = await users.CreateAsync(username, email, ct);
     return Results.Created($"/api/users/{id}", new { Id = id });
-});
+}).RequireAuthorization();
 
 // Simple specification-based search via Application layer
 app.MapGet("/api/users/search", async (IUserQueries queries, string q, CancellationToken ct) =>
 {
     var users = await queries.SearchAsync(q, ct);
     return Results.Ok(users);
+}).RequireAuthorization();
+
+// Auth endpoint
+app.MapPost("/api/auth/login", async (Orbit.Application.Auth.IAuthService auth, LoginRequest body, CancellationToken ct) =>
+{
+    var token = await auth.LoginAsync(body.Username, body.Password, ct);
+    return Results.Ok(token);
+});
+
+// Dev-only register endpoint (optional): create user with password
+app.MapPost("/api/auth/register", async (IUserCommands users, RegisterRequest body, CancellationToken ct) =>
+{
+    var id = await users.CreateWithPasswordAsync(body.Username, body.Email, body.Password, ct);
+    return Results.Created($"/api/users/{id}", new { Id = id });
 });
 
 await app.RunAsync();
