@@ -8,6 +8,7 @@ using Orbit.Domain.Common;
 using Orbit.Domain.Users;
 using Orbit.Infrastructure;
 using Orbit.Infrastructure.Persistence;
+using Orbit.Infrastructure.Seeding;
 using Orbit.Web.Components;
 using Orbit.Web.Api;
 
@@ -76,6 +77,13 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+    
+    // Seed sample data in Development
+    if (app.Environment.IsDevelopment())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+        await seeder.SeedAsync();
+    }
 }
 
 // Minimal API endpoints demonstrating repository usage
