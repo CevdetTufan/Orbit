@@ -2,32 +2,52 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.JSInterop;
 using Orbit.Application.Auth;
 
 namespace Orbit.Web.Security;
 
 public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly ProtectedLocalStorage _storage;
-    private const string StorageKey = "auth_session";
+    private readonly IJSRuntime _js;
+    private readonly IDataProtector _protector;
+    private const string StorageKey = "orbit.auth";
 
     private ClaimsPrincipal _currentUser = new(new ClaimsIdentity());
 
-    public CircuitAuthenticationStateProvider(ProtectedLocalStorage storage)
+    public CircuitAuthenticationStateProvider(IJSRuntime js, IDataProtectionProvider dp)
     {
-        _storage = storage;
+        _js = js;
+        _protector = dp.CreateProtector("Orbit.Web.AuthSession.v1");
     }
 
-    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
-    {
-        if (_currentUser.Identity?.IsAuthenticated == true)
-            return new AuthenticationState(_currentUser);
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+        => Task.FromResult(new AuthenticationState(_currentUser));
 
+    public async Task SignInAsync(AuthTokenDto token)
+    {
+        var session = new AuthSession(token.Username, token.Email, token.Roles, token.ExpiresAtUtc);
+        await SaveAsync(session);
+        _currentUser = BuildPrincipal(session);
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
+
+    public async Task SignOutAsync()
+    {
+        await RemoveAsync();
+        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
+
+    public bool IsRestored { get; private set; }
+
+    public async Task RestoreAsync()
+    {
+        if (IsRestored) return;
         try
         {
-            var result = await _storage.GetAsync<AuthSession>(StorageKey);
-            var session = result.Success ? result.Value : null;
+            var session = await LoadAsync();
             if (session != null && session.ExpiresAtUtc > DateTime.UtcNow)
             {
                 _currentUser = BuildPrincipal(session);
@@ -41,23 +61,35 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
         {
             _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
         }
-
-        return new AuthenticationState(_currentUser);
+        finally
+        {
+            IsRestored = true;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
     }
 
-    public async Task SignInAsync(AuthTokenDto token)
+    private async Task<AuthSession?> LoadAsync()
     {
-        var session = new AuthSession(token.Username, token.Email, token.Roles, token.ExpiresAtUtc);
-        await _storage.SetAsync(StorageKey, session);
-        _currentUser = BuildPrincipal(session);
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        try
+        {
+            var cipher = await _js.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+            if (string.IsNullOrEmpty(cipher)) return null;
+            var json = _protector.Unprotect(cipher);
+            return JsonSerializer.Deserialize<AuthSession>(json);
+        }
+        catch { return null; }
     }
 
-    public async Task SignOutAsync()
+    private async Task SaveAsync(AuthSession session)
     {
-        await _storage.DeleteAsync(StorageKey);
-        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        var json = JsonSerializer.Serialize(session);
+        var cipher = _protector.Protect(json);
+        await _js.InvokeVoidAsync("localStorage.setItem", StorageKey, cipher);
+    }
+
+    private async Task RemoveAsync()
+    {
+        await _js.InvokeVoidAsync("localStorage.removeItem", StorageKey);
     }
 
     private static ClaimsPrincipal BuildPrincipal(AuthSession s)

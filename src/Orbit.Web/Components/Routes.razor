@@ -1,13 +1,36 @@
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <CascadingAuthenticationState>
-            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-                <NotAuthorized>
-                    <RedirectToLogin />
-                </NotAuthorized>
-            </AuthorizeRouteView>
-            <FocusOnNavigate RouteData="routeData" Selector="h1" />
-        </CascadingAuthenticationState>
+        @if (!_authReady)
+        {
+            <text></text>
+        }
+        else
+        {
+            <CascadingAuthenticationState>
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </CascadingAuthenticationState>
+        }
     </Found>
 </Router>
 
+@code {
+    private bool _authReady;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CircuitAuth.RestoreAsync();
+            _authReady = true;
+            StateHasChanged();
+        }
+    }
+}

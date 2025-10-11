@@ -3,12 +3,9 @@
 @inject NavigationManager Nav
 
 @code {
-    protected override void OnAfterRender(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            Nav.NavigateTo("/login", forceLoad: true);
-        }
+        // Navigate before first render to avoid flashing the previous page
+        Nav.NavigateTo("/login", forceLoad: true, replace: true);
     }
 }
-
