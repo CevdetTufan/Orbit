@@ -44,6 +44,8 @@ The domain tests cover value objects (`Email`, `Username`), authorization (`Perm
 
 **License**
 - See `LICENSE.txt`
+ 
+For authentication/authorization and the DDD/CQRS repository design used here, see docs/AUTH-JWT.md for a detailed walkthrough.
 
 **DDD Repositories & Specifications**
 - Read/Write ayrımı:
