@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
+using Orbit.Application.Users;
 using Orbit.Domain.Common;
 using Orbit.Domain.Users;
 using Orbit.Infrastructure;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Web.Components;
-using Orbit.Application.Users.Specifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,32 +45,23 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Minimal API endpoints demonstrating repository usage
-app.MapGet("/api/users", async (IReadRepository<User, Guid> repo, CancellationToken ct) =>
+app.MapGet("/api/users", async (IUserQueries queries, CancellationToken ct) =>
 {
-    var users = await repo.ListAsync(cancellationToken: ct);
-    return Results.Ok(users.Select(u => new
-    {
-        u.Id,
-        Username = u.Username.Value,
-        Email = u.Email.Value,
-        u.IsActive
-    }));
+    var users = await queries.GetAllAsync(ct);
+    return Results.Ok(users);
 });
 
-app.MapPost("/api/users", async (IWriteRepository<User, Guid> repo, IUnitOfWork uow, string username, string email, CancellationToken ct) =>
+app.MapPost("/api/users", async (IUserCommands users, string username, string email, CancellationToken ct) =>
 {
-    var user = User.Create(username, email);
-    await repo.AddAsync(user, ct);
-    await uow.SaveChangesAsync(ct);
-    return Results.Created($"/api/users/{user.Id}", new { user.Id });
+    var id = await users.CreateAsync(username, email, ct);
+    return Results.Created($"/api/users/{id}", new { Id = id });
 });
 
-// Simple specification-based search
-app.MapGet("/api/users/search", async (IReadRepository<User, Guid> repo, string q, CancellationToken ct) =>
+// Simple specification-based search via Application layer
+app.MapGet("/api/users/search", async (IUserQueries queries, string q, CancellationToken ct) =>
 {
-    var spec = new UsersByQuerySpec(q);
-    var users = await repo.ListAsync(spec, ct);
-    return Results.Ok(users.Select(u => new { u.Id, Username = u.Username.Value, Email = u.Email.Value }));
+    var users = await queries.SearchAsync(q, ct);
+    return Results.Ok(users);
 });
 
 await app.RunAsync();
