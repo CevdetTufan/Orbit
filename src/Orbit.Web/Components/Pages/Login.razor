@@ -34,25 +34,31 @@
                         <p class="mt-2 text-sm text-subtext-light dark:text-subtext-dark">Sign in to continue to your dashboard.</p>
                     </div>
 
-                    <div class="mt-8 space-y-6">
+                    <EditForm class="mt-8 space-y-6" Model="login" OnValidSubmit="HandleLoginAsync" formname="login">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger italic text-xs" />
+
                         @if (!string.IsNullOrEmpty(errorMessage))
                         {
                             <div class="rounded-md border border-danger/30 bg-danger/10 text-danger px-3 py-2 text-sm">
                                 @errorMessage
                             </div>
                         }
+
                         <div class="space-y-4 rounded-md">
                             <div>
                                 <label class="sr-only" for="username">Username</label>
-                                <InputText id="username" @bind-Value="login.Username" required
-                                       placeholder="Username"
-                                       class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <InputText id="username" @bind-Value="login.Username"
+                                           placeholder="Username"
+                                           class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <ValidationMessage For="() => login.Username" class="text-danger italic text-xs mt-1" />
                             </div>
                             <div>
                                 <label class="sr-only" for="password">Password</label>
-                                <InputText id="password" @bind-Value="login.Password" type="password" autocomplete="current-password" required
-                                       placeholder="Password"
-                                       class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <InputText id="password" @bind-Value="login.Password" type="password" autocomplete="current-password"
+                                           placeholder="Password"
+                                           class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <ValidationMessage For="() => login.Password" class="text-danger italic text-xs mt-1" />
                             </div>
                         </div>
 
@@ -63,12 +69,12 @@
                         </div>
 
                         <div>
-                            <button type="button" @onclick="HandleLoginAsync" disabled="@isLoading"
+                            <button type="submit" disabled="@isLoading"
                                     class="group relative flex w-full justify-center rounded-md border border-transparent bg-primary py-3 px-4 text-sm font-semibold text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark transition-colors">
                                 @(isLoading ? "Giriş yapılıyor..." : "Log In")
                             </button>
                         </div>
-                    </div>
+                    </EditForm>
                 </div>
             </div>
         </main>
@@ -90,9 +96,13 @@
             await CircuitAuth.SignInAsync(token);
             Nav.NavigateTo("/");
         }
-        catch
+        catch (UnauthorizedAccessException)
         {
             errorMessage = "Kullanıcı adı veya şifre hatalı.";
+        }
+        catch
+        {
+            errorMessage = "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
         }
         finally
         {
@@ -102,7 +112,10 @@
 
     private sealed class LoginModel
     {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
         public string Username { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Şifre zorunludur.")]
         public string Password { get; set; } = string.Empty;
     }
 }
