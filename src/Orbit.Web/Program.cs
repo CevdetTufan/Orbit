@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
 using Orbit.Application.Users;
@@ -107,7 +108,7 @@ app.MapGet("/api/users/search", async (IUserQueries queries, string q, Cancellat
 }).RequireAuthorization();
 
 // Auth endpoint
-app.MapPost("/api/auth/login", async (Orbit.Application.Auth.IAuthService auth, HttpContext http, string username, string password, CancellationToken ct) =>
+app.MapPost("/api/auth/login", async (Orbit.Application.Auth.IAuthService auth, HttpContext http, [FromForm] string username, [FromForm] string password, CancellationToken ct) =>
 {
     var token = await auth.LoginAsync(username, password, ct);
 

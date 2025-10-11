@@ -11,4 +11,3 @@ public sealed class UsersByQuerySpec : BaseSpecification<User>
         ApplyOrderBy(u => u.Username.Value);
     }
 }
-
