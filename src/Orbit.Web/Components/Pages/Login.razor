@@ -1,5 +1,6 @@
 @page "/login"
 @layout Layout.BlankLayout
+@attribute [AllowAnonymous]
 
 <HeadContent>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -63,7 +64,7 @@
                         <p class="mt-2 text-sm text-subtext-light dark:text-subtext-dark">Sign in to continue to your dashboard.</p>
                     </div>
 
-                    <form class="mt-8 space-y-6" method="post" action="#">
+                    <form class="mt-8 space-y-6" method="post" action="/api/auth/login">
                         <div class="space-y-4 rounded-md">
                             <div>
                                 <label class="sr-only" for="username">Username</label>
