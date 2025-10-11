@@ -1,17 +1,11 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
-using Orbit.Application.Users;
-using Orbit.Domain.Common;
-using Orbit.Domain.Users;
 using Orbit.Infrastructure;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Infrastructure.Seeding;
 using Orbit.Web.Components;
-using Orbit.Web.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +20,10 @@ builder.Services.AddInfrastructure(options =>
 builder.Services.AddJwt(o => builder.Configuration.GetSection("Jwt").Bind(o));
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
+// Circuit-scoped auth state (no cookies/controllers)
+builder.Services.AddScoped<Orbit.Web.Security.CircuitAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+    sp.GetRequiredService<Orbit.Web.Security.CircuitAuthenticationStateProvider>());
 
 // JWT Bearer authentication
 builder.Services
@@ -74,27 +72,17 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Apply EF Core migrations on startup (development convenience)
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    
-    // Seed sample data in Development
-    if (app.Environment.IsDevelopment())
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
-        await seeder.SeedAsync();
-    }
+	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+	db.Database.Migrate();
+
+	// Seed sample data in Development
+	if (app.Environment.IsDevelopment())
+	{
+		var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+		await seeder.SeedAsync();
+	}
 }
-
-// Auth: logout endpoint for full HTTP navigation sign-out
-app.MapGet("/logout", async (HttpContext http) =>
-{
-    await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    return Results.Redirect("/login");
-}).DisableAntiforgery();
-
-// No public minimal API endpoints; app is not an API surface.
 
 await app.RunAsync();

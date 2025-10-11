@@ -6,6 +6,8 @@
 @inject Orbit.Application.Auth.IAuthService Auth
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor Http
 @inject NavigationManager Nav
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
 
 <HeadContent>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,8 +35,7 @@
                         <p class="mt-2 text-sm text-subtext-light dark:text-subtext-dark">Sign in to continue to your dashboard.</p>
                     </div>
 
-                    <EditForm class="mt-8 space-y-6" Model="login" OnValidSubmit="HandleLoginAsync">
-                        <DataAnnotationsValidator />
+                    <div class="mt-8 space-y-6">
                         <div class="space-y-4 rounded-md">
                             <div>
                                 <label class="sr-only" for="username">Username</label>
@@ -57,12 +58,12 @@
                         </div>
 
                         <div>
-                            <button type="submit"
+                            <button type="button" @onclick="HandleLoginAsync"
                                     class="group relative flex w-full justify-center rounded-md border border-transparent bg-primary py-3 px-4 text-sm font-semibold text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark transition-colors">
                                 Log In
                             </button>
                         </div>
-                    </EditForm>
+                    </div>
                 </div>
             </div>
         </main>
@@ -83,16 +84,10 @@
         };
         claims.AddRange(token.Roles.Select(r => new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, r)));
 
-        var identity = new System.Security.Claims.ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "CircuitAuth");
         var principal = new System.Security.Claims.ClaimsPrincipal(identity);
 
-        var http = Http.HttpContext!;
-        await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
-        {
-            IsPersistent = true,
-            ExpiresUtc = token.ExpiresAtUtc
-        });
-
+        await CircuitAuth.SignInAsync(principal);
         Nav.NavigateTo("/");
     }
 

@@ -98,17 +98,22 @@
   </div>
 
 @inject IJSRuntime JS
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor Http
 @inject NavigationManager Nav
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Orbit.Web.Security
+@inject CircuitAuthenticationStateProvider CircuitAuth
 @code {
     bool isCollapsed = false;
     bool isAccountOpen = false;
 
-    string? DisplayName => Http.HttpContext?.User?.Identity?.IsAuthenticated == true
-        ? (Http.HttpContext!.User.FindFirst(ClaimTypes.Name)?.Value ?? "Hesap")
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    ClaimsPrincipal? CurrentUser;
+
+    string? DisplayName => CurrentUser?.Identity?.IsAuthenticated == true
+        ? (CurrentUser!.FindFirst(ClaimTypes.Name)?.Value ?? "Hesap")
         : null;
 
     string AsideWidthClass => isCollapsed ? "w-16" : "w-64";
@@ -143,8 +148,8 @@
     async Task LogoutAsync()
     {
         isAccountOpen = false;
-        // Perform full reload to a dedicated sign-out endpoint so cookies can be cleared before response starts
-        Nav.NavigateTo("/logout", forceLoad: true);
+        await CircuitAuth.SignOutAsync();
+        Nav.NavigateTo("/login");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -159,6 +164,19 @@
                     isCollapsed = string.Equals(saved, "collapsed", StringComparison.OrdinalIgnoreCase);
                     StateHasChanged();
                 }
+            }
+            catch { }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthStateTask != null)
+        {
+            try
+            {
+                var state = await AuthStateTask;
+                CurrentUser = state.User;
             }
             catch { }
         }
