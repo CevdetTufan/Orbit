@@ -20,7 +20,7 @@ builder.Services.AddRazorComponents()
 // Application & Infrastructure DI
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddJwt(o => builder.Configuration.GetSection("Jwt").Bind(o));
 builder.Services.AddCascadingAuthenticationState();
 
@@ -71,11 +71,11 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Ensure database created for demo purposes
+// Apply EF Core migrations on startup (development convenience)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 // Minimal API endpoints demonstrating repository usage
