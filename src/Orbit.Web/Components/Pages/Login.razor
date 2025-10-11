@@ -35,6 +35,12 @@
                     </div>
 
                     <div class="mt-8 space-y-6">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="rounded-md border border-danger/30 bg-danger/10 text-danger px-3 py-2 text-sm">
+                                @errorMessage
+                            </div>
+                        }
                         <div class="space-y-4 rounded-md">
                             <div>
                                 <label class="sr-only" for="username">Username</label>
@@ -57,9 +63,9 @@
                         </div>
 
                         <div>
-                            <button type="button" @onclick="HandleLoginAsync"
+                            <button type="button" @onclick="HandleLoginAsync" disabled="@isLoading"
                                     class="group relative flex w-full justify-center rounded-md border border-transparent bg-primary py-3 px-4 text-sm font-semibold text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark transition-colors">
-                                Log In
+                                @(isLoading ? "Giriş yapılıyor..." : "Log In")
                             </button>
                         </div>
                     </div>
@@ -71,12 +77,27 @@
 
 @code {
     private readonly LoginModel login = new();
+    private string? errorMessage;
+    private bool isLoading;
 
     private async Task HandleLoginAsync()
     {
-        var token = await Auth.LoginAsync(login.Username, login.Password);
-        await CircuitAuth.SignInAsync(token);
-        Nav.NavigateTo("/");
+        errorMessage = null;
+        isLoading = true;
+        try
+        {
+            var token = await Auth.LoginAsync(login.Username, login.Password);
+            await CircuitAuth.SignInAsync(token);
+            Nav.NavigateTo("/");
+        }
+        catch
+        {
+            errorMessage = "Kullanıcı adı veya şifre hatalı.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private sealed class LoginModel
