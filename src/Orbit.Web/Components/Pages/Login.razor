@@ -4,7 +4,6 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @inject Orbit.Application.Auth.IAuthService Auth
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor Http
 @inject NavigationManager Nav
 @using Orbit.Web.Security
 @inject CircuitAuthenticationStateProvider CircuitAuth
@@ -71,23 +70,12 @@
 </div>
 
 @code {
-    private LoginModel login = new();
+    private readonly LoginModel login = new();
 
     private async Task HandleLoginAsync()
     {
         var token = await Auth.LoginAsync(login.Username, login.Password);
-
-        var claims = new List<System.Security.Claims.Claim>
-        {
-            new(System.Security.Claims.ClaimTypes.Name, token.Username),
-            new(System.Security.Claims.ClaimTypes.Email, token.Email)
-        };
-        claims.AddRange(token.Roles.Select(r => new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, r)));
-
-        var identity = new System.Security.Claims.ClaimsIdentity(claims, "CircuitAuth");
-        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
-
-        await CircuitAuth.SignInAsync(principal);
+        await CircuitAuth.SignInAsync(token);
         Nav.NavigateTo("/");
     }
 

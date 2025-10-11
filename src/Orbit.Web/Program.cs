@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
 using Orbit.Infrastructure;
@@ -21,6 +22,7 @@ builder.Services.AddJwt(o => builder.Configuration.GetSection("Jwt").Bind(o));
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 // Circuit-scoped auth state (no cookies/controllers)
+builder.Services.AddScoped<ProtectedLocalStorage>();
 builder.Services.AddScoped<Orbit.Web.Security.CircuitAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<Orbit.Web.Security.CircuitAuthenticationStateProvider>());
@@ -71,18 +73,5 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-using (var scope = app.Services.CreateScope())
-{
-	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	db.Database.Migrate();
-
-	// Seed sample data in Development
-	if (app.Environment.IsDevelopment())
-	{
-		var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
-		await seeder.SeedAsync();
-	}
-}
 
 await app.RunAsync();
