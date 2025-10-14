@@ -1,10 +1,9 @@
-using System.Security.Claims;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.JSInterop;
 using Orbit.Application.Auth;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace Orbit.Web.Security;
 
@@ -12,7 +11,7 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
 {
     private readonly IJSRuntime _js;
     private readonly IDataProtector _protector;
-    private const string StorageKey = "orbit.auth";
+    private const string StorageKey = "auth_session";
 
     private ClaimsPrincipal _currentUser = new(new ClaimsIdentity());
 
@@ -48,6 +47,7 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
         try
         {
             var session = await LoadAsync();
+
             if (session != null && session.ExpiresAtUtc > DateTime.UtcNow)
             {
                 _currentUser = BuildPrincipal(session);

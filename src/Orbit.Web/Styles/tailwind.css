@@ -5,3 +5,13 @@
 /* Small helpers that were inline before */
 .group:hover .group-hover\:block { display: block; }
 
+/* Design-token aliases to align with provided mock */
+@layer components {
+  .bg-card-light { @apply bg-content-light; }
+  .text-text-secondary-light { @apply text-subtext-light; }
+  .text-text-secondary-dark { @apply text-subtext-dark; }
+}
+
+@layer utilities {
+  .dark .bg-card-dark { @apply bg-content-dark; }
+}
