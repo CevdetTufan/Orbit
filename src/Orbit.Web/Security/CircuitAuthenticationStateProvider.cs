@@ -12,7 +12,10 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
 {
     private readonly IJSRuntime _js;
     private readonly IDataProtector _protector;
-    private const string StorageKey = "orbit.auth";
+    // Yeni standart anahtar
+    private const string StorageKey = "auth_session";
+    // Eski anahtar (geçiş için tutuluyor)
+    private const string LegacyStorageKey = "orbit.auth";
 
     private ClaimsPrincipal _currentUser = new(new ClaimsIdentity());
 
@@ -48,6 +51,16 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
         try
         {
             var session = await LoadAsync();
+            // Eğer yeni anahtardan bulunamazsa, eski anahtardan dene ve taşı
+            if (session is null)
+            {
+                session = await TryLoadLegacyAsync();
+                if (session is not null)
+                {
+                    await SaveAsync(session); // yeni anahtara taşı
+                    await RemoveLegacyAsync();
+                }
+            }
             if (session != null && session.ExpiresAtUtc > DateTime.UtcNow)
             {
                 _currentUser = BuildPrincipal(session);
@@ -85,11 +98,47 @@ public sealed class CircuitAuthenticationStateProvider : AuthenticationStateProv
         var json = JsonSerializer.Serialize(session);
         var cipher = _protector.Protect(json);
         await _js.InvokeVoidAsync("localStorage.setItem", StorageKey, cipher);
+        // Eski anahtar varsa temizle
+        await RemoveLegacyAsync();
     }
 
     private async Task RemoveAsync()
     {
         await _js.InvokeVoidAsync("localStorage.removeItem", StorageKey);
+        await RemoveLegacyAsync();
+    }
+
+    private async Task<AuthSession?> TryLoadLegacyAsync()
+    {
+        try
+        {
+            var raw = await _js.InvokeAsync<string?>("localStorage.getItem", LegacyStorageKey);
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            // 1) Düz JSON olarak dene
+            try
+            {
+                var s = JsonSerializer.Deserialize<AuthSession>(raw!);
+                if (s is not null) return s;
+            }
+            catch { }
+
+            // 2) Eski sürüm de korumalı olabilir; korumayı kaldırmayı dene
+            try
+            {
+                var json = _protector.Unprotect(raw!);
+                return JsonSerializer.Deserialize<AuthSession>(json);
+            }
+            catch { }
+
+            return null;
+        }
+        catch { return null; }
+    }
+
+    private async Task RemoveLegacyAsync()
+    {
+        try { await _js.InvokeVoidAsync("localStorage.removeItem", LegacyStorageKey); } catch { }
     }
 
     private static ClaimsPrincipal BuildPrincipal(AuthSession s)

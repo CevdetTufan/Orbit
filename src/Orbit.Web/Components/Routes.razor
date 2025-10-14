@@ -43,6 +43,12 @@
                 // Wait until navigation; don’t render current route to avoid flash
                 _readyToRender = false;
             }
+            else if (isAuth && onLogin)
+            {
+                // Oturum zaten varsa login sayfasında beklemeyelim
+                Nav.NavigateTo("/", forceLoad: true, replace: true);
+                _readyToRender = false;
+            }
             else
             {
                 _readyToRender = true;
