@@ -12,6 +12,8 @@ public static class DependencyInjection
         services.AddScoped<IUserCommands, UserCommands>();
         services.AddScoped<IUserQueries, UserQueries>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ILoginAttemptQueries, LoginAttemptQueries>();
         return services;
     }
 }
+

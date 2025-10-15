@@ -2,9 +2,9 @@
 @using System.Security.Claims
 @using Orbit.Domain.Security
 @using Orbit.Domain.Common
-@using Orbit.Application.Auth.Specifications
+@using Orbit.Application.Auth
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IReadRepository<LoginAttempt, Guid> LoginAttempts
+@inject ILoginAttemptQueries LoginAttemptQueries
 @inject Orbit.Web.Security.CircuitAuthenticationStateProvider CircuitAuth
 @inject NavigationManager Nav
 
@@ -195,9 +195,8 @@
             return;
         }
 
-        totalCount = await LoginAttempts.CountAsync(new LoginAttemptsByUsernameFilterSpec(username));
-        var pageSpec = new LoginAttemptsByUsernamePagedSpec(username, pageIndex, pageSize);
-        var list = await LoginAttempts.ListAsync(pageSpec);
+        totalCount = await LoginAttemptQueries.CountAsync(username);
+        var list = await LoginAttemptQueries.GetPageAsync(username, pageIndex, pageSize);
         attempts = list.ToList();
         StateHasChanged();
     }
