@@ -1,7 +1,6 @@
 @page "/hesabim"
 @using System.Security.Claims
 @using Orbit.Domain.Security
-@using Orbit.Domain.Common
 @using Orbit.Application.Auth
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILoginAttemptQueries LoginAttemptQueries
@@ -12,147 +11,54 @@
     <section class="mb-6 bg-content-light/80 dark:bg-content-dark/80 backdrop-blur border border-border-light dark:border-border-dark rounded-lg px-4 py-5 flex items-center gap-3">
         <div class="h-12 w-12 rounded-full bg-primary/10 text-primary grid place-items-center font-semibold">@AvatarInitial</div>
         <div class="flex-1">
-            <h1 class="text-2xl font-bold">Hesabım</h1>
-            <p class="text-sm text-subtext-light dark:text-subtext-dark">Kişisel bilgilerinizi ve giriş geçmişinizi yönetin.</p>
+            <h1 class="text-2xl font-bold">Hesabim</h1>
+            <p class="text-sm text-subtext-light dark:text-subtext-dark">Bilgilerinizi ve giris gecmisinizi yonetin.</p>
         </div>
     </section>
 
     @if (loading)
     {
-        <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yükleniyor…</div>
+        <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
     }
     else
     {
         <div class="space-y-6">
-            <!-- Profile + user info card (full width) -->
-            <div class="bg-content-light dark:bg-content-dark p-6 rounded-lg border border-border-light dark:border-border-dark shadow-sm">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    <!-- Avatar + actions -->
-                    <div class="flex items-start gap-4">
-                        <div class="relative">
-                            <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-primary/10 text-primary grid place-items-center text-xl lg:text-2xl font-semibold">@AvatarInitial</div>
-                            <span class="absolute -bottom-0.5 -right-0.5 block h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white dark:border-content-dark"></span>
-                        </div>
-                        <div>
-                            <h2 class="text-base lg:text-lg font-semibold">@DisplayTitle</h2>
-                            <p class="text-sm text-subtext-light dark:text-subtext-dark">@email</p>
-                            <div class="mt-4 space-y-2">
-                                <a href="#" class="flex items-center text-text-light dark:text-text-dark hover:text-primary dark:hover:text-primary transition-colors">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21 3 21 3 17z"/></svg>
-                                    Profili Düzenle
-                                </a>
-                                <a href="#" class="flex items-center text-text-light dark:text-text-dark hover:text-primary dark:hover:text-primary transition-colors">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    Şifreyi Değiştir
-                                </a>
-                                <button class="flex items-center text-danger hover:text-danger/80 transition-colors" @onclick="LogoutAsync">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-                                    Çıkış Yap
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- User info block -->
-                    <div class="space-y-3">
-                        <h3 class="text-sm font-semibold text-subtext-light dark:text-subtext-dark">Kullanıcı Bilgileri</h3>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">Kullanıcı Adı</p>
-                                <p class="font-medium">@username</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1l3 5 5 3-5 3-3 5-3-5-5-3 5-3 3-5z"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">Rol</p>
-                                <p class="font-medium">@(roles.Count == 0 ? "-" : string.Join(", ", roles))</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Email block -->
-                    <div class="space-y-3">
-                        <h3 class="sr-only">İletişim</h3>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 7H2"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">E-posta</p>
-                                <p class="font-medium">@email</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Login history card -->
-            <div class="bg-content-light dark:bg-content-dark p-6 rounded-lg border border-border-light dark:border-border-dark shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Giriş Geçmişi</h3>
-                    <div class="flex items-center gap-3 text-sm text-subtext-light dark:text-subtext-dark">
-                        <span>Kayıtlar @StartIndex-@EndIndex / @totalCount</span>
-                        <div class="flex items-center gap-2">
-                            <label class="hidden sm:block" for="page-size">Sayfa boyutu</label>
-                            <select id="page-size" class="form-select w-20 text-sm rounded-md bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" value="@pageSize" @onchange="ChangePageSize">
-                                <option>10</option>
-                                <option>25</option>
-                                <option>50</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full table-fixed text-sm text-left">
-                        <thead class="text-xs uppercase text-subtext-light dark:text-subtext-dark bg-background-light dark:bg-background-dark">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
-                                <th scope="col" class="px-6 py-3 w-24">Durum</th>
-                                <th scope="col" class="px-6 py-3 w-24">IP</th>
-                                <th scope="col" class="px-6 py-3">Tarayıcı</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @if (attempts.Count == 0)
-                        {
-                            <tr class="border-b border-border-light dark:border-border-dark">
-                                <td class="px-6 py-6 text-center text-subtext-light dark:text-subtext-dark" colspan="4">Kayıt bulunamadı.</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var a in attempts)
+            <DataGrid TItem="LoginAttempt" Context="row"
+                          Items="@attempts"
+                          Title="Giris Gecmisi"
+                          TotalCount="@totalCount"
+                          PageIndex="@pageIndex"
+                          PageIndexChanged="@(i => pageIndex = i)"
+                          PageSize="@pageSize"
+                          PageSizeChanged="@(s => pageSize = s)"
+                          OnPageChange="HandleGridPageChange"
+                          EnablePaging="true"
+                          EnablePageSizeSelector="true"
+                          EnableEdit="false"
+                          EnableDelete="false"
+                          Loading="@loading">
+                    <HeaderTemplate>
+                        <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
+                        <th scope="col" class="px-6 py-3 w-24">Durum</th>
+                        <th scope="col" class="px-6 py-3 w-24">IP</th>
+                        <th scope="col" class="px-6 py-3">Tarayici</th>
+                    </HeaderTemplate>
+                    <RowTemplate>
+                        <td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="px-6 py-2">
+                            @if (row.IsSuccessful)
                             {
-                                <tr class="border-b border-border-light dark:border-border-dark odd:bg-background-light/40 dark:odd:bg-background-dark/40">
-                                    <td class="px-6 py-2 whitespace-nowrap">@a.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                    <td class="px-6 py-2">
-                                        @if (a.IsSuccessful)
-                                        {
-                                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayır</span>
-                                        }
-                                    </td>
-                                    <td class="px-6 py-2">@a.RemoteIp</td>
-                                    <td class="px-6 py-2 truncate" title="@a.UserAgent">@a.UserAgent</td>
-                                </tr>
+                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
                             }
-                        }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex items-center justify-between pt-4 text-sm">
-                    <span class="text-subtext-light dark:text-subtext-dark">Sayfa @(pageIndex + 1) / @Math.Max(1, totalPages)</span>
-                    <div class="flex gap-2">
-                        <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@(pageIndex == 0)" @onclick="PrevPage">Önceki</button>
-                        <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@((pageIndex + 1) >= totalPages)" @onclick="NextPage">Sonraki</button>
-                    </div>
-                </div>
-            </div>
+                            else
+                            {
+                                <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
+                            }
+                        </td>
+                        <td class="px-6 py-2">@row.RemoteIp</td>
+                        <td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
+                    </RowTemplate>
+                </DataGrid>
         </div>
     }
 </div>
@@ -161,18 +67,13 @@
     bool loading = true;
     string username = string.Empty;
     string email = string.Empty;
-    List<string> roles = new();
+    List<LoginAttempt> attempts = new();
 
     int pageIndex = 0;
     int pageSize = 10;
     int totalCount = 0;
-    int totalPages => (int)Math.Ceiling(totalCount / (double)pageSize);
-    int StartIndex => totalCount == 0 ? 0 : pageIndex * pageSize + 1;
-    int EndIndex => Math.Min(totalCount, (pageIndex + 1) * pageSize);
-    string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
-    string DisplayTitle => string.IsNullOrWhiteSpace(username) ? "Hesap" : username;
 
-    List<LoginAttempt> attempts = new();
+    string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,49 +81,38 @@
         var user = state.User;
         username = user.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
         email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().OrderBy(r => r).ToList();
 
         await LoadPageAsync();
-        loading = false;
     }
 
     async Task LoadPageAsync()
     {
-        if (string.IsNullOrWhiteSpace(username))
+        loading = true;
+        try
         {
-            attempts.Clear();
-            totalCount = 0;
-            return;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                attempts.Clear();
+                totalCount = 0;
+                return;
+            }
+
+            totalCount = await LoginAttemptQueries.CountAsync(username);
+            var list = await LoginAttemptQueries.GetPageAsync(username, pageIndex, pageSize);
+            attempts = list.ToList();
         }
-
-        totalCount = await LoginAttemptQueries.CountAsync(username);
-        var list = await LoginAttemptQueries.GetPageAsync(username, pageIndex, pageSize);
-        attempts = list.ToList();
-        StateHasChanged();
-    }
-
-    async Task PrevPage()
-    {
-        if (pageIndex == 0) return;
-        pageIndex--;
-        await LoadPageAsync();
-    }
-
-    async Task NextPage()
-    {
-        if ((pageIndex + 1) >= totalPages) return;
-        pageIndex++;
-        await LoadPageAsync();
-    }
-
-    async Task ChangePageSize(ChangeEventArgs e)
-    {
-        if (int.TryParse(Convert.ToString(e.Value), out var size) && size > 0)
+        finally
         {
-            pageSize = size;
-            pageIndex = 0;
-            await LoadPageAsync();
+            loading = false;
+            StateHasChanged();
         }
+    }
+
+    async Task HandleGridPageChange((int pageIndex, int pageSize) e)
+    {
+        pageIndex = e.pageIndex;
+        pageSize = e.pageSize;
+        await LoadPageAsync();
     }
 
     async Task LogoutAsync()
@@ -231,3 +121,4 @@
         Nav.NavigateTo("/login");
     }
 }
+
