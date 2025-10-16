@@ -44,4 +44,9 @@ public sealed class User : Entity<Guid>, IAggregateRoot
         if (link is null) return;
         _roles.Remove(link);
     }
+
+    public void UpdateEmail(Email email)
+    {
+        Email = email;
+    }
 }
