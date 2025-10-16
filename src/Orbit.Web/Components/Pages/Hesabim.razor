@@ -138,8 +138,8 @@
                         }
                     </div>
                     <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
-                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
-                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700">Kaydet</button>
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
                     </div>
                 </EditForm>
             </div>
@@ -159,17 +159,53 @@
                     <div class="p-6 space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">Mevcut Şifre</label>
-                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.CurrentPassword" />
+                            <div style="position:relative;">
+                                <InputText type="@(showCurrentPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.CurrentPassword" />
+                                <button type="button" aria-label="Şifreyi @(showCurrentPwd ? "gizle" : "göster")" @onclick="(()=> showCurrentPwd = !showCurrentPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showCurrentPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
                             <ValidationMessage For="@(()=> pwdModel.CurrentPassword)" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Yeni Şifre</label>
-                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.NewPassword" />
+                            <div style="position:relative;">
+                                <InputText type="@(showNewPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.NewPassword" />
+                                <button type="button" aria-label="Şifreyi @(showNewPwd ? "gizle" : "göster")" @onclick="(()=> showNewPwd = !showNewPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showNewPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
                             <ValidationMessage For="@(()=> pwdModel.NewPassword)" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Yeni Şifre (Tekrar)</label>
-                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.ConfirmNewPassword" />
+                            <div style="position:relative;">
+                                <InputText type="@(showConfirmPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.ConfirmNewPassword" />
+                                <button type="button" aria-label="Şifreyi @(showConfirmPwd ? "gizle" : "göster")" @onclick="(()=> showConfirmPwd = !showConfirmPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showConfirmPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
                             <ValidationMessage For="@(()=> pwdModel.ConfirmNewPassword)" />
                         </div>
                         @if (!string.IsNullOrWhiteSpace(feedback))
@@ -178,8 +214,8 @@
                         }
                     </div>
                     <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
-                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
-                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700">Kaydet</button>
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
                     </div>
                 </EditForm>
             </div>
@@ -254,6 +290,9 @@
 
     EmailModel emailModel = new();
     PasswordModel pwdModel = new();
+    bool showCurrentPwd = false;
+    bool showNewPwd = false;
+    bool showConfirmPwd = false;
 
     async Task SubmitEmailChangeAsync()
     {
