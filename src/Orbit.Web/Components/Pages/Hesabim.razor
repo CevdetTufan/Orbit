@@ -29,7 +29,7 @@
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">E-posta</td>
                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(email) ? email : "—")</td>
                         <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm">Değiştir</button>
+                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm" @onclick="(()=> { showEmailModal = true; feedback = string.Empty; })">Değiştir</button>
                         </td>
                     </tr>
 
@@ -38,7 +38,7 @@
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Şifre</td>
                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">********</td>
                         <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm">Şifreyi Değiştir</button>
+                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm" @onclick="(()=> { showPasswordModal = true; feedback = string.Empty; })">Şifreyi Değiştir</button>
                         </td>
                     </tr>
 
@@ -118,9 +118,9 @@
 
     @if (showEmailModal)
     {
-        <div class="fixed inset-0 z-50 flex items-center justify-center">
-            <div class="fixed inset-0 bg-black/40" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })"></div>
-            <div class="relative z-10 w-full max-w-md rounded-lg bg-white text-gray-900 shadow-lg dark:bg-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark">
+        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })"></div>
+            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
                 <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
                     <h2 class="text-lg font-semibold">E-posta Güncelle</h2>
                 </div>
@@ -129,7 +129,7 @@
                     <div class="p-6 space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">Yeni E-posta</label>
-                            <InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 bg-white dark:bg-gray-800" @bind-Value="emailModel.NewEmail" />
+                            <InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="emailModel.NewEmail" />
                             <ValidationMessage For="@(()=> emailModel.NewEmail)" />
                         </div>
                         @if (!string.IsNullOrWhiteSpace(feedback))
@@ -139,12 +139,53 @@
                     </div>
                     <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
                         <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
-                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white">Kaydet</button>
+                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700">Kaydet</button>
                     </div>
                 </EditForm>
             </div>
         </div>
     }
+    
+    @if (showPasswordModal)
+    {
+        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })"></div>
+            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <h2 class="text-lg font-semibold">Şifreyi Güncelle</h2>
+                </div>
+                <EditForm Model="@pwdModel" OnValidSubmit="SubmitPasswordChangeAsync">
+                    <DataAnnotationsValidator />
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Mevcut Şifre</label>
+                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.CurrentPassword" />
+                            <ValidationMessage For="@(()=> pwdModel.CurrentPassword)" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni Şifre</label>
+                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.NewPassword" />
+                            <ValidationMessage For="@(()=> pwdModel.NewPassword)" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni Şifre (Tekrar)</label>
+                            <InputText type="password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="pwdModel.ConfirmNewPassword" />
+                            <ValidationMessage For="@(()=> pwdModel.ConfirmNewPassword)" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(feedback))
+                        {
+                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+                        }
+                    </div>
+                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700">Kaydet</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+    
 </div>
 
 @code {
