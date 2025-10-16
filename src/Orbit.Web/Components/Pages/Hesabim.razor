@@ -19,18 +19,17 @@
                     <!-- Kullanıcı Adı -->
                     <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 w-1/3">Kullanıcı Adı</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300"></td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm">Düzenle</button>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(username) ? username : "—")</td>
+                        <td class="px-6 py-4 text-right" @onclick="(()=> showEmailModal = true)">                          
                         </td>
                     </tr>
 
                     <!-- Mail - Mail Değiştir -->
                     <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">E-posta</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300"></td>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(email) ? email : "—")</td>
                         <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-sm">Değiştir</button>
+                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm">Değiştir</button>
                         </td>
                     </tr>
 
@@ -39,16 +38,29 @@
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Şifre</td>
                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">********</td>
                         <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-white text-sm">Şifreyi Değiştir</button>
+                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm">Şifreyi Değiştir</button>
                         </td>
                     </tr>
 
                     <!-- Role -->
                     <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
                         <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Rol</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300"></td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-green-500 hover:bg-green-600 text-white text-sm">Rolü Değiştir</button>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+                            @if (roles is { Count: > 0 })
+                            {
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var r in roles)
+                                    {
+                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">@r</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="px-6 py-4 text-right">                           
                         </td>
                     </tr>
 
@@ -82,7 +94,7 @@
                           Loading="@loading">
                     <HeaderTemplate>
                         <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
-                        <th scope="col" class="px-6 py-3 w-24">Durum</th>
+                        <th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
                         <th scope="col" class="px-6 py-3 w-24">IP</th>
                         <th scope="col" class="px-6 py-3">Tarayici</th>
                     </HeaderTemplate>
@@ -102,6 +114,36 @@
                         <td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
                     </RowTemplate>
                 </DataGrid></div></div>
+    }
+
+    @if (showEmailModal)
+    {
+        <div class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="fixed inset-0 bg-black/40" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })"></div>
+            <div class="relative z-10 w-full max-w-md rounded-lg bg-white text-gray-900 shadow-lg dark:bg-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark">
+                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <h2 class="text-lg font-semibold">E-posta Güncelle</h2>
+                </div>
+                <EditForm Model="@emailModel" OnValidSubmit="SubmitEmailChangeAsync">
+                    <DataAnnotationsValidator />
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni E-posta</label>
+                            <InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 bg-white dark:bg-gray-800" @bind-Value="emailModel.NewEmail" />
+                            <ValidationMessage For="@(()=> emailModel.NewEmail)" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(feedback))
+                        {
+                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+                        }
+                    </div>
+                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white">Kaydet</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
     }
 </div>
 
