@@ -1,160 +1,227 @@
-@page "/hesabim"
+﻿@page "/hesabim"
 @using System.Security.Claims
 @using Orbit.Domain.Security
-@using Orbit.Domain.Common
-@using Orbit.Application.Auth.Specifications
+@using Orbit.Application.Auth
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IReadRepository<LoginAttempt, Guid> LoginAttempts
+@inject ILoginAttemptQueries LoginAttemptQueries
 @inject Orbit.Web.Security.CircuitAuthenticationStateProvider CircuitAuth
 @inject NavigationManager Nav
+@inject Orbit.Application.Account.IAccountService AccountService
 
-<div class="container mx-auto p-0">
-    <section class="mb-6 bg-content-light/80 dark:bg-content-dark/80 backdrop-blur border border-border-light dark:border-border-dark rounded-lg px-4 py-5 flex items-center gap-3">
-        <div class="h-12 w-12 rounded-full bg-primary/10 text-primary grid place-items-center font-semibold">@AvatarInitial</div>
-        <div class="flex-1">
-            <h1 class="text-2xl font-bold">Hesabım</h1>
-            <p class="text-sm text-subtext-light dark:text-subtext-dark">Kişisel bilgilerinizi ve giriş geçmişinizi yönetin.</p>
+<div class="w-full">
+   <h1 class="text-3xl font-bold mb-8">Hesabım</h1>
+
+    <div class="mt-8">
+        <div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+            <table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+                <tbody class="divide-y divide-border-light dark:divide-border-dark">
+
+                    <!-- Kullanıcı Adı -->
+                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 w-1/3">Kullanıcı Adı</td>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(username) ? username : "—")</td>
+                        <td class="px-6 py-4 text-right" @onclick="(()=> showEmailModal = true)">                          
+                        </td>
+                    </tr>
+
+                    <!-- Mail - Mail Değiştir -->
+                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">E-posta</td>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(email) ? email : "—")</td>
+                        <td class="px-6 py-4 text-right">
+                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm" @onclick="(()=> { showEmailModal = true; feedback = string.Empty; })">Değiştir</button>
+                        </td>
+                    </tr>
+
+                    <!-- Şifre - Şifre Değiştir -->
+                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Şifre</td>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">********</td>
+                        <td class="px-6 py-4 text-right">
+                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm" @onclick="(()=> { showPasswordModal = true; feedback = string.Empty; })">Şifreyi Değiştir</button>
+                        </td>
+                    </tr>
+
+                    <!-- Role -->
+                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Rol</td>
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+                            @if (roles is { Count: > 0 })
+                            {
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var r in roles)
+                                    {
+                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">@r</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="px-6 py-4 text-right">                           
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
+
 
     @if (loading)
     {
-        <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yükleniyor…</div>
+        <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
     }
     else
     {
-        <div class="space-y-6">
-            <!-- Profile + user info card (full width) -->
-            <div class="bg-content-light dark:bg-content-dark p-6 rounded-lg border border-border-light dark:border-border-dark shadow-sm">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    <!-- Avatar + actions -->
-                    <div class="flex items-start gap-4">
-                        <div class="relative">
-                            <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-primary/10 text-primary grid place-items-center text-xl lg:text-2xl font-semibold">@AvatarInitial</div>
-                            <span class="absolute -bottom-0.5 -right-0.5 block h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white dark:border-content-dark"></span>
-                        </div>
-                        <div>
-                            <h2 class="text-base lg:text-lg font-semibold">@DisplayTitle</h2>
-                            <p class="text-sm text-subtext-light dark:text-subtext-dark">@email</p>
-                            <div class="mt-4 space-y-2">
-                                <a href="#" class="flex items-center text-text-light dark:text-text-dark hover:text-primary dark:hover:text-primary transition-colors">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21 3 21 3 17z"/></svg>
-                                    Profili Düzenle
-                                </a>
-                                <a href="#" class="flex items-center text-text-light dark:text-text-dark hover:text-primary dark:hover:text-primary transition-colors">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    Şifreyi Değiştir
-                                </a>
-                                <button class="flex items-center text-danger hover:text-danger/80 transition-colors" @onclick="LogoutAsync">
-                                    <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-                                    Çıkış Yap
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- User info block -->
-                    <div class="space-y-3">
-                        <h3 class="text-sm font-semibold text-subtext-light dark:text-subtext-dark">Kullanıcı Bilgileri</h3>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">Kullanıcı Adı</p>
-                                <p class="font-medium">@username</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1l3 5 5 3-5 3-3 5-3-5-5-3 5-3 3-5z"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">Rol</p>
-                                <p class="font-medium">@(roles.Count == 0 ? "-" : string.Join(", ", roles))</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Email block -->
-                    <div class="space-y-3">
-                        <h3 class="sr-only">İletişim</h3>
-                        <div class="flex items-start gap-3">
-                            <svg class="h-5 w-5 text-subtext-light dark:text-subtext-dark mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 7H2"/></svg>
-                            <div>
-                                <p class="text-xs text-subtext-light dark:text-subtext-dark">E-posta</p>
-                                <p class="font-medium">@email</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Login history card -->
-            <div class="bg-content-light dark:bg-content-dark p-6 rounded-lg border border-border-light dark:border-border-dark shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Giriş Geçmişi</h3>
-                    <div class="flex items-center gap-3 text-sm text-subtext-light dark:text-subtext-dark">
-                        <span>Kayıtlar @StartIndex-@EndIndex / @totalCount</span>
-                        <div class="flex items-center gap-2">
-                            <label class="hidden sm:block" for="page-size">Sayfa boyutu</label>
-                            <select id="page-size" class="form-select w-20 text-sm rounded-md bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" value="@pageSize" @onchange="ChangePageSize">
-                                <option>10</option>
-                                <option>25</option>
-                                <option>50</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full table-fixed text-sm text-left">
-                        <thead class="text-xs uppercase text-subtext-light dark:text-subtext-dark bg-background-light dark:bg-background-dark">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
-                                <th scope="col" class="px-6 py-3 w-24">Durum</th>
-                                <th scope="col" class="px-6 py-3 w-24">IP</th>
-                                <th scope="col" class="px-6 py-3">Tarayıcı</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @if (attempts.Count == 0)
-                        {
-                            <tr class="border-b border-border-light dark:border-border-dark">
-                                <td class="px-6 py-6 text-center text-subtext-light dark:text-subtext-dark" colspan="4">Kayıt bulunamadı.</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var a in attempts)
+        <div class="mt-8">
+            <div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+            <DataGrid TItem="LoginAttempt" Context="row"
+                          Items="@attempts"
+                          Title="Giriş Geçmişi"
+                          TotalCount="@totalCount"
+                          PageIndex="@pageIndex"
+                          PageIndexChanged="@(i => pageIndex = i)"
+                          PageSize="@pageSize"
+                          PageSizeChanged="@(s => pageSize = s)"
+                          OnPageChange="HandleGridPageChange"
+                          EnablePaging="true"
+                          EnablePageSizeSelector="true"
+                          EnableEdit="false"
+                          EnableDelete="false"
+                          Loading="@loading">
+                    <HeaderTemplate>
+                        <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
+                        <th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
+                        <th scope="col" class="px-6 py-3 w-24">IP</th>
+                        <th scope="col" class="px-6 py-3">Tarayici</th>
+                    </HeaderTemplate>
+                    <RowTemplate>
+                        <td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="px-6 py-2">
+                            @if (row.IsSuccessful)
                             {
-                                <tr class="border-b border-border-light dark:border-border-dark odd:bg-background-light/40 dark:odd:bg-background-dark/40">
-                                    <td class="px-6 py-2 whitespace-nowrap">@a.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                    <td class="px-6 py-2">
-                                        @if (a.IsSuccessful)
-                                        {
-                                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayır</span>
-                                        }
-                                    </td>
-                                    <td class="px-6 py-2">@a.RemoteIp</td>
-                                    <td class="px-6 py-2 truncate" title="@a.UserAgent">@a.UserAgent</td>
-                                </tr>
+                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
                             }
-                        }
-                        </tbody>
-                    </table>
-                </div>
+                            else
+                            {
+                                <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
+                            }
+                        </td>
+                        <td class="px-6 py-2">@row.RemoteIp</td>
+                        <td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
+                    </RowTemplate>
+                </DataGrid></div></div>
+    }
 
-                <div class="flex items-center justify-between pt-4 text-sm">
-                    <span class="text-subtext-light dark:text-subtext-dark">Sayfa @(pageIndex + 1) / @Math.Max(1, totalPages)</span>
-                    <div class="flex gap-2">
-                        <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@(pageIndex == 0)" @onclick="PrevPage">Önceki</button>
-                        <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@((pageIndex + 1) >= totalPages)" @onclick="NextPage">Sonraki</button>
-                    </div>
+    @if (showEmailModal)
+    {
+        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })"></div>
+            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <h2 class="text-lg font-semibold">E-posta Güncelle</h2>
                 </div>
+                <EditForm Model="@emailModel" OnValidSubmit="SubmitEmailChangeAsync">
+                    <DataAnnotationsValidator />
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni E-posta</label>
+                            <InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="emailModel.NewEmail" />
+                            <ValidationMessage For="@(()=> emailModel.NewEmail)" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(feedback))
+                        {
+                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+                        }
+                    </div>
+                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
     }
+    
+    @if (showPasswordModal)
+    {
+        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })"></div>
+            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <h2 class="text-lg font-semibold">Şifreyi Güncelle</h2>
+                </div>
+                <EditForm Model="@pwdModel" OnValidSubmit="SubmitPasswordChangeAsync">
+                    <DataAnnotationsValidator />
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Mevcut Şifre</label>
+                            <div style="position:relative;">
+                                <InputText type="@(showCurrentPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.CurrentPassword" />
+                                <button type="button" aria-label="Şifreyi @(showCurrentPwd ? "gizle" : "göster")" @onclick="(()=> showCurrentPwd = !showCurrentPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showCurrentPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(()=> pwdModel.CurrentPassword)" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni Şifre</label>
+                            <div style="position:relative;">
+                                <InputText type="@(showNewPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.NewPassword" />
+                                <button type="button" aria-label="Şifreyi @(showNewPwd ? "gizle" : "göster")" @onclick="(()=> showNewPwd = !showNewPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showNewPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(()=> pwdModel.NewPassword)" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yeni Şifre (Tekrar)</label>
+                            <div style="position:relative;">
+                                <InputText type="@(showConfirmPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.ConfirmNewPassword" />
+                                <button type="button" aria-label="Şifreyi @(showConfirmPwd ? "gizle" : "göster")" @onclick="(()=> showConfirmPwd = !showConfirmPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                    @if (showConfirmPwd)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    }
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(()=> pwdModel.ConfirmNewPassword)" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(feedback))
+                        {
+                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+                        }
+                    </div>
+                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
+                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+    
 </div>
 
 @code {
@@ -162,17 +229,13 @@
     string username = string.Empty;
     string email = string.Empty;
     List<string> roles = new();
+    List<LoginAttempt> attempts = new();
 
     int pageIndex = 0;
     int pageSize = 10;
     int totalCount = 0;
-    int totalPages => (int)Math.Ceiling(totalCount / (double)pageSize);
-    int StartIndex => totalCount == 0 ? 0 : pageIndex * pageSize + 1;
-    int EndIndex => Math.Min(totalCount, (pageIndex + 1) * pageSize);
-    string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
-    string DisplayTitle => string.IsNullOrWhiteSpace(username) ? "Hesap" : username;
 
-    List<LoginAttempt> attempts = new();
+    string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,50 +243,39 @@
         var user = state.User;
         username = user.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
         email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().OrderBy(r => r).ToList();
+        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
 
         await LoadPageAsync();
-        loading = false;
     }
 
     async Task LoadPageAsync()
     {
-        if (string.IsNullOrWhiteSpace(username))
+        loading = true;
+        try
         {
-            attempts.Clear();
-            totalCount = 0;
-            return;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                attempts.Clear();
+                totalCount = 0;
+                return;
+            }
+
+            totalCount = await LoginAttemptQueries.CountAsync(username);
+            var list = await LoginAttemptQueries.GetPageAsync(username, pageIndex, pageSize);
+            attempts = list.ToList();
         }
-
-        totalCount = await LoginAttempts.CountAsync(new LoginAttemptsByUsernameFilterSpec(username));
-        var pageSpec = new LoginAttemptsByUsernamePagedSpec(username, pageIndex, pageSize);
-        var list = await LoginAttempts.ListAsync(pageSpec);
-        attempts = list.ToList();
-        StateHasChanged();
-    }
-
-    async Task PrevPage()
-    {
-        if (pageIndex == 0) return;
-        pageIndex--;
-        await LoadPageAsync();
-    }
-
-    async Task NextPage()
-    {
-        if ((pageIndex + 1) >= totalPages) return;
-        pageIndex++;
-        await LoadPageAsync();
-    }
-
-    async Task ChangePageSize(ChangeEventArgs e)
-    {
-        if (int.TryParse(Convert.ToString(e.Value), out var size) && size > 0)
+        finally
         {
-            pageSize = size;
-            pageIndex = 0;
-            await LoadPageAsync();
+            loading = false;
+            StateHasChanged();
         }
+    }
+
+    async Task HandleGridPageChange((int pageIndex, int pageSize) e)
+    {
+        pageIndex = e.pageIndex;
+        pageSize = e.pageSize;
+        await LoadPageAsync();
     }
 
     async Task LogoutAsync()
@@ -231,4 +283,72 @@
         await CircuitAuth.SignOutAsync();
         Nav.NavigateTo("/login");
     }
+
+    string feedback = string.Empty;
+    bool showEmailModal = false;
+    bool showPasswordModal = false;
+
+    EmailModel emailModel = new();
+    PasswordModel pwdModel = new();
+    bool showCurrentPwd = false;
+    bool showNewPwd = false;
+    bool showConfirmPwd = false;
+
+    async Task SubmitEmailChangeAsync()
+    {
+        try
+        {
+            await AccountService.UpdateEmailAsync(username, emailModel.NewEmail);
+            email = emailModel.NewEmail;
+            feedback = "E‑posta başarıyla güncellendi.";
+            showEmailModal = false;
+            emailModel = new();
+        }
+        catch (Exception ex)
+        {
+            feedback = $"E‑posta güncellenemedi: {ex.Message}";
+        }
+    }
+
+    async Task SubmitPasswordChangeAsync()
+    {
+        if (pwdModel.NewPassword != pwdModel.ConfirmNewPassword)
+        {
+            feedback = "Yeni şifreler eşleşmiyor.";
+            return;
+        }
+
+        try
+        {
+            await AccountService.ChangePasswordAsync(username, pwdModel.CurrentPassword, pwdModel.NewPassword);
+            feedback = "Şifre başarıyla güncellendi.";
+            showPasswordModal = false;
+            pwdModel = new();
+        }
+        catch (Exception ex)
+        {
+            feedback = $"Şifre güncellenemedi: {ex.Message}";
+        }
+    }
+
+    class EmailModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E‑posta zorunludur.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Geçerli bir e‑posta giriniz.")]
+        public string NewEmail { get; set; } = string.Empty;
+    }
+
+    class PasswordModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Mevcut şifre zorunludur.")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Yeni şifre zorunludur.")]
+        [System.ComponentModel.DataAnnotations.MinLength(6, ErrorMessage = "En az 6 karakter olmalıdır.")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Yeni şifre tekrar zorunludur.")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
 }
+

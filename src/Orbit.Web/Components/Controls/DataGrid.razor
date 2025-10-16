@@ -1,0 +1,202 @@
+@typeparam TItem
+
+<div class="relative overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+    @if (IsLoading)
+    {
+        <div class="absolute inset-0 z-20 grid place-items-center bg-background-light/60 dark:bg-background-dark/60 backdrop-blur-sm">
+            <div class="h-10 w-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin"></div>
+        </div>
+    }
+    <div class="flex items-center justify-between p-3 text-sm">
+        <div class="flex items-center gap-3">
+            @if (!string.IsNullOrWhiteSpace(Title))
+            {
+                <span class="font-semibold text-text-light dark:text-text-dark">@Title</span>
+            }
+            @if (EnablePaging)
+            {
+                <span class="text-subtext-light dark:text-subtext-dark">Kayitlar @StartIndex-@EndIndex / @TotalCount</span>
+            }
+        </div>
+        @if (EnablePageSizeSelector)
+        {
+            <div class="flex items-center gap-2 text-subtext-light dark:text-subtext-dark">
+                <label class="hidden sm:block" for="page-size">Sayfa boyutu</label>
+                <select id="page-size" class="form-select w-24 text-sm rounded-md bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary pr-10"
+                        style="padding-right: 2rem; background-position: right .5rem center;"
+                        value="@PageSize" @onchange="OnChangePageSize" disabled="@IsLoading">
+                    @foreach (var size in PageSizeOptionsInternal)
+                    {
+                        <option value="@size">@size</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+
+    <table class="w-full table-fixed text-sm text-left">
+        <thead class="text-xs uppercase text-subtext-light dark:text-subtext-dark bg-background-light dark:bg-background-dark">
+            <tr>
+                @HeaderTemplate
+                @if (ShowActions)
+                {
+                    <th scope="col" class="px-6 py-3 w-32 text-right">İşlemler</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+        @if (Loading)
+        {
+            <tr class="border-b border-border-light dark:border-border-dark">
+                <td class="px-6 py-6 text-center text-subtext-light dark:text-subtext-dark" colspan="100">Yükleniyor...</td>
+            </tr>
+        }
+        else if (Items is null || !Items.Any())
+        {
+            <tr class="border-b border-border-light dark:border-border-dark">
+                <td class="px-6 py-6 text-center text-subtext-light dark:text-subtext-dark" colspan="100">@NoDataText</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Items)
+            {
+                <tr class="border-b border-border-light dark:border-border-dark odd:bg-background-light/40 dark:odd:bg-background-dark/40">
+                    @RowTemplate(item)
+                    @if (ShowActions)
+                    {
+                        <td class="px-6 py-2 text-right whitespace-nowrap">
+                            @if (EnableEdit)
+                            {
+                                <button class="px-3 py-1 rounded-md border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20 mr-2"
+                                        @onclick="(() => InvokeEditAsync(item))">Düzenle</button>
+                            }
+                            @if (EnableDelete)
+                            {
+                                <button class="px-3 py-1 rounded-md border border-danger text-danger hover:bg-danger/10"
+                                        @onclick="(() => InvokeDeleteAsync(item))">Sil</button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+
+    @if (EnablePaging)
+    {
+        <div class="flex items-center justify-between p-3 text-sm">
+            <span class="text-subtext-light dark:text-subtext-dark">Sayfa @(PageIndex + 1) / @Math.Max(1, TotalPages)</span>
+            <div class="flex gap-2">
+                <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@(IsLoading || PageIndex == 0)" @onclick="PrevPage">Önceki</button>
+                <button class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md disabled:opacity-50" disabled="@(IsLoading || (PageIndex + 1) >= TotalPages)" @onclick="NextPage">Sonraki</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int PageIndex { get; set; }
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public bool EnablePaging { get; set; } = true;
+    [Parameter] public bool EnablePageSizeSelector { get; set; } = true;
+    [Parameter] public IEnumerable<int>? PageSizeOptions { get; set; }
+    [Parameter] public bool EnableEdit { get; set; } = false;
+    [Parameter] public bool EnableDelete { get; set; } = false;
+    [Parameter] public bool Loading { get; set; } = false;
+    [Parameter] public string NoDataText { get; set; } = "Kayıt bulunamadı.";
+
+    [Parameter] public RenderFragment? HeaderTemplate { get; set; }
+    [Parameter] public RenderFragment<TItem>? RowTemplate { get; set; }
+
+    // Events
+    [Parameter] public EventCallback<int> PageIndexChanged { get; set; }
+    [Parameter] public EventCallback<int> PageSizeChanged { get; set; }
+    [Parameter] public EventCallback<(int pageIndex, int pageSize)> OnPageChange { get; set; }
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+
+    private IEnumerable<int> PageSizeOptionsInternal => PageSizeOptions ?? new[] { 10, 25, 50 };
+    private int TotalPages => (int)Math.Ceiling(TotalCount / (double)Math.Max(1, PageSize));
+    private int StartIndex => TotalCount == 0 ? 0 : PageIndex * PageSize + 1;
+    private int EndIndex => Math.Min(TotalCount, (PageIndex + 1) * PageSize);
+    private bool ShowActions => EnableEdit || EnableDelete;
+    private bool _busy;
+    private bool IsLoading => Loading || _busy;
+
+    private async Task PrevPage()
+    {
+        if (PageIndex == 0) return;
+        _busy = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var newIndex = PageIndex - 1;
+            await PageIndexChanged.InvokeAsync(newIndex);
+            if (OnPageChange.HasDelegate)
+                await OnPageChange.InvokeAsync((newIndex, PageSize));
+        }
+        finally
+        {
+            _busy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if ((PageIndex + 1) >= TotalPages) return;
+        _busy = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var newIndex = PageIndex + 1;
+            await PageIndexChanged.InvokeAsync(newIndex);
+            if (OnPageChange.HasDelegate)
+                await OnPageChange.InvokeAsync((newIndex, PageSize));
+        }
+        finally
+        {
+            _busy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnChangePageSize(ChangeEventArgs e)
+    {
+        if (int.TryParse(Convert.ToString(e.Value), out var size) && size > 0)
+        {
+            _busy = true;
+            await InvokeAsync(StateHasChanged);
+            try
+            {
+                await PageSizeChanged.InvokeAsync(size);
+                // Reset to first page when page size changes
+                await PageIndexChanged.InvokeAsync(0);
+                if (OnPageChange.HasDelegate)
+                    await OnPageChange.InvokeAsync((0, size));
+            }
+            finally
+            {
+                _busy = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task InvokeEditAsync(TItem item)
+    {
+        if (OnEdit.HasDelegate)
+            await OnEdit.InvokeAsync(item);
+    }
+
+    private async Task InvokeDeleteAsync(TItem item)
+    {
+        if (OnDelete.HasDelegate)
+            await OnDelete.InvokeAsync(item);
+    }
+}

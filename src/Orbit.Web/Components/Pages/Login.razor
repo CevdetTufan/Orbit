@@ -55,16 +55,22 @@
                             </div>
                             <div>
                                 <label class="sr-only" for="password">Password</label>
-                                <InputText id="password" @bind-Value="login.Password" type="password" autocomplete="current-password"
-                                           placeholder="Password"
-                                           class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" />
+                                <div style="position:relative;">
+                                    <InputText id="password" @bind-Value="login.Password" type="@(showLoginPwd ? "text" : "password")" autocomplete="current-password"
+                                               placeholder="Password"
+                                               class="form-input relative block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm" style="padding-right:40px;" />
+                                    <button type="button" aria-label="Şifreyi @(showLoginPwd ? "gizle" : "göster")" @onclick="(()=> showLoginPwd = !showLoginPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+                                        @if (showLoginPwd)
+                                        {
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        }
+                                    </button>
+                                </div>
                                 <ValidationMessage For="() => login.Password" class="text-danger italic text-xs mt-1" />
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-end">
-                            <div class="text-sm">
-                                <a href="#" class="font-medium text-primary hover:text-primary/80">Forgot your password?</a>
                             </div>
                         </div>
 
@@ -85,6 +91,7 @@
     private readonly LoginModel login = new();
     private string? errorMessage;
     private bool isLoading;
+    private bool showLoginPwd = false;
 
     private async Task HandleLoginAsync()
     {
