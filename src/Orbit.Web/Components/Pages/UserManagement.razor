@@ -290,10 +290,9 @@
 		{
 			await RoleCommands.UpdateAsync(id, editRoleName ?? string.Empty, editRoleDescription);
 		}
-		catch (Exception)
+		catch (Exception ex)
 		{
-
-			ShowMessage("Rol güncellenemedi.", "Lütfen bilgileri kontrol edin ve tekrar deneyin.", MessageType.Error);
+			ShowMessage("Rol güncellenemedi.", $"Lütfen bilgileri kontrol edin ve tekrar deneyin. <br>{ex.Message}", MessageType.Error);
 		}
 		finally
 		{
