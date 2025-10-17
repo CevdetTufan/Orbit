@@ -18,20 +18,32 @@
                 <span class="text-subtext-light dark:text-subtext-dark">Kayitlar @StartIndex-@EndIndex / @TotalCount</span>
             }
         </div>
-        @if (EnablePageSizeSelector)
-        {
-            <div class="flex items-center gap-2 text-subtext-light dark:text-subtext-dark">
-                <label class="hidden sm:block" for="page-size">Sayfa boyutu</label>
-                <select id="page-size" class="form-select w-24 text-sm rounded-md bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary pr-10"
-                        style="padding-right: 2rem; background-position: right .5rem center;"
-                        value="@PageSize" @onchange="OnChangePageSize" disabled="@IsLoading">
-                    @foreach (var size in PageSizeOptionsInternal)
-                    {
-                        <option value="@size">@size</option>
-                    }
-                </select>
-            </div>
-        }
+        <div class="flex items-center gap-3">
+            @if (EnableAdd)
+            {
+                <button @onclick="InvokeAddAsync" 
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    @AddButtonText
+                </button>
+            }
+            @if (EnablePageSizeSelector)
+            {
+                <div class="flex items-center gap-2 text-subtext-light dark:text-subtext-dark">
+                    <label class="hidden sm:block" for="page-size">Sayfa boyutu</label>
+                    <select id="page-size" class="form-select w-24 text-sm rounded-md bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary pr-10"
+                            style="padding-right: 2rem; background-position: right .5rem center;"
+                            value="@PageSize" @onchange="OnChangePageSize" disabled="@IsLoading">
+                        @foreach (var size in PageSizeOptionsInternal)
+                        {
+                            <option value="@size">@size</option>
+                        }
+                    </select>
+                </div>
+            }
+        </div>
     </div>
 
     <table class="w-full table-fixed text-sm text-left">
@@ -107,6 +119,8 @@
     [Parameter] public IEnumerable<int>? PageSizeOptions { get; set; }
     [Parameter] public bool EnableEdit { get; set; } = false;
     [Parameter] public bool EnableDelete { get; set; } = false;
+    [Parameter] public bool EnableAdd { get; set; } = false;
+    [Parameter] public string AddButtonText { get; set; } = "Ekle";
     [Parameter] public bool Loading { get; set; } = false;
     [Parameter] public string NoDataText { get; set; } = "Kayıt bulunamadı.";
 
@@ -119,6 +133,7 @@
     [Parameter] public EventCallback<(int pageIndex, int pageSize)> OnPageChange { get; set; }
     [Parameter] public EventCallback<TItem> OnEdit { get; set; }
     [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
 
     private IEnumerable<int> PageSizeOptionsInternal => PageSizeOptions ?? new[] { 10, 25, 50 };
     private int TotalPages => (int)Math.Ceiling(TotalCount / (double)Math.Max(1, PageSize));
@@ -198,5 +213,11 @@
     {
         if (OnDelete.HasDelegate)
             await OnDelete.InvokeAsync(item);
+    }
+
+    private async Task InvokeAddAsync()
+    {
+        if (OnAdd.HasDelegate)
+            await OnAdd.InvokeAsync();
     }
 }

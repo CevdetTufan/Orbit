@@ -1,0 +1,80 @@
+﻿@using Orbit.Web.Components.Controls
+
+@if (Visible)
+{
+    <div class="flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+        <div class="fixed inset-0 bg-black/50" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:2000;" @onclick="OnOk"></div>
+        <div class="w-full max-w-md rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark p-6 shadow-xl" style="position:relative;z-index:2001;">
+            <div class="flex items-start gap-3 mb-4">
+                @switch (Type)
+                {
+                    case MessageType.Error:
+                        <svg class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        break;
+                    case MessageType.Warning:
+                        <svg class="w-6 h-6 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z">a</path>
+                        </svg>
+                        break;
+                    case MessageType.Info:
+                        <svg class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        break;
+                    case MessageType.Success:
+                        <svg class="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        break;
+                }
+                <div class="flex-1">
+                    @if (!string.IsNullOrWhiteSpace(Title))
+                    {
+                        <h3 class="text-lg font-semibold text-text-light dark:text-text-dark mb-2">@Title</h3>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Message))
+                    {
+                        <p class="text-sm text-subtext-light dark:text-subtext-dark">@Message</p>
+                    }
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button class="@GetButtonClass() px-4 py-2 rounded-md font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors" 
+                        @onclick="OnOk">
+                    @OkText
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public MessageType Type { get; set; } = MessageType.Info;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string OkText { get; set; } = "Tamam";
+    [Parameter] public EventCallback OnOk { get; set; }
+
+    private string GetButtonClass()
+    {
+        return Type switch
+        {
+            MessageType.Error => "bg-red-600 text-white focus:ring-red-500",
+            MessageType.Warning => "bg-yellow-600 text-white focus:ring-yellow-500",
+            MessageType.Info => "bg-blue-600 text-white focus:ring-blue-500",
+            MessageType.Success => "bg-green-600 text-white focus:ring-green-500",
+            _ => "bg-primary text-white focus:ring-primary"
+        };
+    }
+
+    public enum MessageType
+    {
+        Error,
+        Warning,
+        Info,
+        Success
+    }
+}
