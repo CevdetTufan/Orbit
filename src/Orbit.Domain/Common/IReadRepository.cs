@@ -24,7 +24,11 @@ public interface IReadRepository<TAggregate, TId>
         ISpecification<TAggregate> specification,
         CancellationToken cancellationToken = default);
 
-    Task<int> CountAsync(
+	Task<IReadOnlyList<TResult>> ListAsync<TResult>(
+        BaseSpecification<TAggregate, TResult> specification, 
+        CancellationToken cancellationToken = default);
+
+	Task<int> CountAsync(
         ISpecification<TAggregate> specification,
         CancellationToken cancellationToken = default);
 

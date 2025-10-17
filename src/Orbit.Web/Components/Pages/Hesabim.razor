@@ -1,7 +1,9 @@
 ﻿@page "/hesabim"
 @using System.Security.Claims
+@using Orbit.Application.Auth.Models
 @using Orbit.Domain.Security
 @using Orbit.Application.Auth
+@using Orbit.Web.Models.Account
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILoginAttemptQueries LoginAttemptQueries
 @inject Orbit.Web.Security.CircuitAuthenticationStateProvider CircuitAuth
@@ -9,362 +11,343 @@
 @inject Orbit.Application.Account.IAccountService AccountService
 
 <div class="w-full">
-   <h1 class="text-3xl font-bold mb-8">Hesabım</h1>
+	<h1 class="text-3xl font-bold mb-8">Hesabım</h1>
 
-    <div class="mt-8">
-        <div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
-            <table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
-                <tbody class="divide-y divide-border-light dark:divide-border-dark">
+	<div class="mt-8">
+		<div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+			<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+				<tbody class="divide-y divide-border-light dark:divide-border-dark">
 
-                    <!-- Kullanıcı Adı -->
-                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
-                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 w-1/3">Kullanıcı Adı</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(username) ? username : "—")</td>
-                        <td class="px-6 py-4 text-right" @onclick="(()=> showEmailModal = true)">                          
-                        </td>
-                    </tr>
+					<!-- Kullanıcı Adı -->
+					<tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+						<td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 w-1/3">Kullanıcı Adı</td>
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(username) ? username : "—")</td>
+						<td class="px-6 py-4 text-right" @onclick="(() => showEmailModal = true)">
+						</td>
+					</tr>
 
-                    <!-- Mail - Mail Değiştir -->
-                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
-                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">E-posta</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(email) ? email : "—")</td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm" @onclick="(()=> { showEmailModal = true; feedback = string.Empty; })">Değiştir</button>
-                        </td>
-                    </tr>
+					<!-- Mail - Mail Değiştir -->
+					<tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+						<td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">E-posta</td>
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">@(!string.IsNullOrWhiteSpace(email) ? email : "—")</td>
+						<td class="px-6 py-4 text-right">
+							<button class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-sm" @onclick="(() => { showEmailModal = true; feedback = string.Empty; })">Değiştir</button>
+						</td>
+					</tr>
 
-                    <!-- Şifre - Şifre Değiştir -->
-                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
-                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Şifre</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">********</td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm" @onclick="(()=> { showPasswordModal = true; feedback = string.Empty; })">Şifreyi Değiştir</button>
-                        </td>
-                    </tr>
+					<!-- Şifre - Şifre Değiştir -->
+					<tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+						<td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Şifre</td>
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">********</td>
+						<td class="px-6 py-4 text-right">
+							<button class="px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-600 text-sm" @onclick="(() => { showPasswordModal = true; feedback = string.Empty; })">Şifreyi Değiştir</button>
+						</td>
+					</tr>
 
-                    <!-- Role -->
-                    <tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
-                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Rol</td>
-                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
-                            @if (roles is { Count: > 0 })
-                            {
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (var r in roles)
-                                    {
-                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">@r</span>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <span>—</span>
-                            }
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-sm text-white" @onclick="(()=> showLogoutConfirm = true)">Çıkış Yap</button>
-                        </td>
-                    </tr>
+					<!-- Role -->
+					<tr class="hover:bg-hover-light dark:hover:bg-hover-dark transition">
+						<td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Rol</td>
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+							@if (roles is { Count: > 0 })
+							{
+								<div class="flex flex-wrap gap-2">
+									@foreach (var r in roles)
+									{
+										<span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">@r</span>
+									}
+								</div>
+							}
+							else
+							{
+								<span>—</span>
+							}
+						</td>
+						<td class="px-6 py-4 text-right">
+							<button class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-sm text-white" @onclick="(() => showLogoutConfirm = true)">Çıkış Yap</button>
+						</td>
+					</tr>
 
-                </tbody>
-            </table>
-        </div>
-    </div>
+				</tbody>
+			</table>
+		</div>
+	</div>
 
 
-    @if (loading)
-    {
-        <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
-    }
+	@if (loading)
+	{
+		<div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
+	}
 
-    <ConfirmDialog Visible="@showLogoutConfirm"
-                   Title="Oturumu kapat"
-                   Message="Çıkış yapmak istediğinize emin misiniz?"
-                   ConfirmText="Evet, çıkış yap"
-                   CancelText="İptal"
-                   OnConfirm="ConfirmLogoutAsync"
-                   OnCancel="(()=> showLogoutConfirm = false)" />
-    else
-    {
-        <div class="mt-8">
-            <div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
-            <DataGrid TItem="LoginAttempt" Context="row"
-                          Items="@attempts"
-                          Title="Giriş Geçmişi"
-                          TotalCount="@totalCount"
-                          PageIndex="@pageIndex"
-                          PageIndexChanged="@(i => pageIndex = i)"
-                          PageSize="@pageSize"
-                          PageSizeChanged="@(s => pageSize = s)"
-                          OnPageChange="HandleGridPageChange"
-                          EnablePaging="true"
-                          EnablePageSizeSelector="true"
-                          EnableEdit="false"
-                          EnableDelete="false"
-                          Loading="@loading">
-                    <HeaderTemplate>
-                        <th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
-                        <th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
-                        <th scope="col" class="px-6 py-3 w-24">IP</th>
-                        <th scope="col" class="px-6 py-3">Tarayici</th>
-                    </HeaderTemplate>
-                    <RowTemplate>
-                        <td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td class="px-6 py-2">
-                            @if (row.IsSuccessful)
-                            {
-                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
-                            }
-                            else
-                            {
-                                <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
-                            }
-                        </td>
-                        <td class="px-6 py-2">@row.RemoteIp</td>
-                        <td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
-                    </RowTemplate>
-                </DataGrid></div></div>
-    }
+	<ConfirmDialog Visible="@showLogoutConfirm"
+				   Title="Oturumu kapat"
+				   Message="Çıkış yapmak istediğinize emin misiniz?"
+				   ConfirmText="Evet, çıkış yap"
+				   CancelText="İptal"
+				   OnConfirm="ConfirmLogoutAsync"
+				   OnCancel="(()=> showLogoutConfirm = false)" />
+	else
+	{
+	<div class="mt-8">
+		<div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+			<DataGrid TItem="LoginAttemptListItemDto" Context="row"
+					  Items="@attempts"
+					  Title="Giriş Geçmişi"
+					  TotalCount="@totalCount"
+					  PageIndex="@pageIndex"
+					  PageIndexChanged="@(i => pageIndex = i)"
+					  PageSize="@pageSize"
+					  PageSizeChanged="@(s => pageSize = s)"
+					  OnPageChange="HandleGridPageChange"
+					  EnablePaging="true"
+					  EnablePageSizeSelector="true"
+					  EnableEdit="false"
+					  EnableDelete="false"
+					  Loading="@loading">
+				<HeaderTemplate>
+					<th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
+					<th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
+					<th scope="col" class="px-6 py-3 w-24">IP</th>
+					<th scope="col" class="px-6 py-3">Tarayici</th>
+				</HeaderTemplate>
+				<RowTemplate>
+					<td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+					<td class="px-6 py-2">
+						@if (row.IsSuccessful)
+						{
+							<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
+						}
+						else
+						{
+							<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
+						}
+					</td>
+					<td class="px-6 py-2">@row.RemoteIp</td>
+					<td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
+				</RowTemplate>
+			</DataGrid>
+		</div>
+	</div>
+	}
 
-    @if (showEmailModal)
-    {
-        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
-            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })"></div>
-            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
-                    <h2 class="text-lg font-semibold">E-posta Güncelle</h2>
-                </div>
-                <EditForm Model="@emailModel" OnValidSubmit="SubmitEmailChangeAsync">
-                    <DataAnnotationsValidator />
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Yeni E-posta</label>
-                            <InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="emailModel.NewEmail" />
-                            <ValidationMessage For="@(()=> emailModel.NewEmail)" />
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(feedback))
-                        {
-                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
-                        }
-                    </div>
-                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
-                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showEmailModal = false; feedback = string.Empty; })">İptal</button>
-                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
-                    </div>
-                </EditForm>
-            </div>
-        </div>
-    }
-    
-    @if (showPasswordModal)
-    {
-        <div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
-            <div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })"></div>
-            <div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
-                    <h2 class="text-lg font-semibold">Şifreyi Güncelle</h2>
-                </div>
-                <EditForm Model="@pwdModel" OnValidSubmit="SubmitPasswordChangeAsync">
-                    <DataAnnotationsValidator />
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Mevcut Şifre</label>
-                            <div style="position:relative;">
-                                <InputText type="@(showCurrentPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.CurrentPassword" />
-                                <button type="button" aria-label="Şifreyi @(showCurrentPwd ? "gizle" : "göster")" @onclick="(()=> showCurrentPwd = !showCurrentPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
-                                    @if (showCurrentPwd)
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
-                                    }
-                                    else
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    }
-                                </button>
-                            </div>
-                            <ValidationMessage For="@(()=> pwdModel.CurrentPassword)" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Yeni Şifre</label>
-                            <div style="position:relative;">
-                                <InputText type="@(showNewPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.NewPassword" />
-                                <button type="button" aria-label="Şifreyi @(showNewPwd ? "gizle" : "göster")" @onclick="(()=> showNewPwd = !showNewPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
-                                    @if (showNewPwd)
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
-                                    }
-                                    else
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    }
-                                </button>
-                            </div>
-                            <ValidationMessage For="@(()=> pwdModel.NewPassword)" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Yeni Şifre (Tekrar)</label>
-                            <div style="position:relative;">
-                                <InputText type="@(showConfirmPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.ConfirmNewPassword" />
-                                <button type="button" aria-label="Şifreyi @(showConfirmPwd ? "gizle" : "göster")" @onclick="(()=> showConfirmPwd = !showConfirmPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
-                                    @if (showConfirmPwd)
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83"/><path d="M1 1l22 22"/><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94"/></svg>
-                                    }
-                                    else
-                                    {
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    }
-                                </button>
-                            </div>
-                            <ValidationMessage For="@(()=> pwdModel.ConfirmNewPassword)" />
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(feedback))
-                        {
-                            <div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
-                        }
-                    </div>
-                    <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
-                        <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(()=> { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
-                        <button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
-                    </div>
-                </EditForm>
-            </div>
-        </div>
-    }
-    
+	@if (showEmailModal)
+	{
+		<div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+			<div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(() => { showEmailModal = false; feedback = string.Empty; })"></div>
+			<div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+				<div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+					<h2 class="text-lg font-semibold">E-posta Güncelle</h2>
+				</div>
+				<EditForm Model="@emailModel" OnValidSubmit="SubmitEmailChangeAsync">
+					<DataAnnotationsValidator />
+					<div class="p-6 space-y-4">
+						<div>
+							<label class="block text-sm font-medium mb-1">Yeni E-posta</label>
+							<InputText class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;" @bind-Value="emailModel.NewEmail" />
+							<ValidationMessage For="@(() => emailModel.NewEmail)" />
+						</div>
+						@if (!string.IsNullOrWhiteSpace(feedback))
+						{
+							<div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+						}
+					</div>
+					<div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+						<button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(() => { showEmailModal = false; feedback = string.Empty; })">İptal</button>
+						<button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
+					</div>
+				</EditForm>
+			</div>
+		</div>
+	}
+
+	@if (showPasswordModal)
+	{
+		<div class="fixed inset-0 z-50 flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+			<div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="(() => { showPasswordModal = false; feedback = string.Empty; })"></div>
+			<div class="w-full max-w-md rounded-lg text-gray-900 dark:text-gray-100 border border-border-light dark:border-border-dark" style="position:relative;z-index:2001;background-color:#ffffff;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+				<div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+					<h2 class="text-lg font-semibold">Şifreyi Güncelle</h2>
+				</div>
+				<EditForm Model="@pwdModel" OnValidSubmit="SubmitPasswordChangeAsync">
+					<DataAnnotationsValidator />
+					<div class="p-6 space-y-4">
+						<div>
+							<label class="block text-sm font-medium mb-1">Mevcut Şifre</label>
+							<div style="position:relative;">
+								<InputText type="@(showCurrentPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.CurrentPassword" />
+								<button type="button" aria-label="Şifreyi @(showCurrentPwd ? "gizle" : "göster")" @onclick="(() => showCurrentPwd = !showCurrentPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+									@if (showCurrentPwd)
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83" /><path d="M1 1l22 22" /><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94" /></svg>
+									}
+									else
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+									}
+								</button>
+							</div>
+							<ValidationMessage For="@(() => pwdModel.CurrentPassword)" />
+						</div>
+						<div>
+							<label class="block text-sm font-medium mb-1">Yeni Şifre</label>
+							<div style="position:relative;">
+								<InputText type="@(showNewPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.NewPassword" />
+								<button type="button" aria-label="Şifreyi @(showNewPwd ? "gizle" : "göster")" @onclick="(() => showNewPwd = !showNewPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+									@if (showNewPwd)
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83" /><path d="M1 1l22 22" /><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94" /></svg>
+									}
+									else
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+									}
+								</button>
+							</div>
+							<ValidationMessage For="@(() => pwdModel.NewPassword)" />
+						</div>
+						<div>
+							<label class="block text-sm font-medium mb-1">Yeni Şifre (Tekrar)</label>
+							<div style="position:relative;">
+								<InputText type="@(showConfirmPwd ? "text" : "password")" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700" style="background-color:#ffffff;padding-right:40px;" @bind-Value="pwdModel.ConfirmNewPassword" />
+								<button type="button" aria-label="Şifreyi @(showConfirmPwd ? "gizle" : "göster")" @onclick="(() => showConfirmPwd = !showConfirmPwd)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;background:transparent;cursor:pointer;">
+									@if (showConfirmPwd)
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.66-1.53 1.69-3 3-4.24M10.58 10.58a2 2 0 1 0 2.83 2.83" /><path d="M1 1l22 22" /><path d="M9.88 4.12A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.03 2.38-2.77 4.46-4.88 5.94" /></svg>
+									}
+									else
+									{
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+									}
+								</button>
+							</div>
+							<ValidationMessage For="@(() => pwdModel.ConfirmNewPassword)" />
+						</div>
+						@if (!string.IsNullOrWhiteSpace(feedback))
+						{
+							<div class="text-sm text-amber-700 dark:text-amber-400">@feedback</div>
+						}
+					</div>
+					<div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+						<button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" @onclick="(() => { showPasswordModal = false; feedback = string.Empty; })">İptal</button>
+						<button type="submit" class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" style="background-color:#2563eb;color:#ffffff;">Kaydet</button>
+					</div>
+				</EditForm>
+			</div>
+		</div>
+	}
+
 </div>
 
 @code {
-    bool loading = true;
-    string username = string.Empty;
-    string email = string.Empty;
-    List<string> roles = new();
-    List<LoginAttempt> attempts = new();
+	bool loading = true;
+	string username = string.Empty;
+	string email = string.Empty;
+	List<string> roles = new();
+	List<LoginAttemptListItemDto> attempts = new();
 
-    int pageIndex = 0;
-    int pageSize = 10;
-    int totalCount = 0;
+	int pageIndex = 0;
+	int pageSize = 10;
+	int totalCount = 0;
 
-    string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
+	string AvatarInitial => string.IsNullOrWhiteSpace(username) ? "?" : username.Trim()[0].ToString().ToUpperInvariant();
 
-    protected override async Task OnInitializedAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = state.User;
-        username = user.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
-        email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+	protected override async Task OnInitializedAsync()
+	{
+		var state = await AuthStateProvider.GetAuthenticationStateAsync();
+		var user = state.User;
+		username = user.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+		email = user.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+		roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
 
-        await LoadPageAsync();
-    }
+		await LoadPageAsync();
+	}
 
-    async Task LoadPageAsync()
-    {
-        loading = true;
-        try
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                attempts.Clear();
-                totalCount = 0;
-                return;
-            }
+	async Task LoadPageAsync()
+	{
+		loading = true;
+		try
+		{
+			if (string.IsNullOrWhiteSpace(username))
+			{
+				attempts.Clear();
+				totalCount = 0;
+				return;
+			}
+			var list = await LoginAttemptQueries.GetPagedAsync(username, pageIndex, pageSize);
+			attempts = list.Items.ToList();
+			totalCount = list.TotalCount;
+		}
+		finally
+		{
+			loading = false;
+			StateHasChanged();
+		}
+	}
 
-            totalCount = await LoginAttemptQueries.CountAsync(username);
-            var list = await LoginAttemptQueries.GetPageAsync(username, pageIndex, pageSize);
-            attempts = list.ToList();
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
-    }
+	async Task HandleGridPageChange((int pageIndex, int pageSize) e)
+	{
+		pageIndex = e.pageIndex;
+		pageSize = e.pageSize;
+		await LoadPageAsync();
+	}
 
-    async Task HandleGridPageChange((int pageIndex, int pageSize) e)
-    {
-        pageIndex = e.pageIndex;
-        pageSize = e.pageSize;
-        await LoadPageAsync();
-    }
+	async Task LogoutAsync()
+	{
+		await CircuitAuth.SignOutAsync();
+		Nav.NavigateTo("/login");
+	}
 
-    async Task LogoutAsync()
-    {
-        await CircuitAuth.SignOutAsync();
-        Nav.NavigateTo("/login");
-    }
+	string feedback = string.Empty;
+	bool showEmailModal = false;
+	bool showPasswordModal = false;
+	bool showLogoutConfirm = false;
 
-    string feedback = string.Empty;
-    bool showEmailModal = false;
-    bool showPasswordModal = false;
-    bool showLogoutConfirm = false;
+	EmailModel emailModel = new();
+	PasswordModel pwdModel = new();
+	bool showCurrentPwd = false;
+	bool showNewPwd = false;
+	bool showConfirmPwd = false;
 
-    EmailModel emailModel = new();
-    PasswordModel pwdModel = new();
-    bool showCurrentPwd = false;
-    bool showNewPwd = false;
-    bool showConfirmPwd = false;
+	async Task SubmitEmailChangeAsync()
+	{
+		try
+		{
+			await AccountService.UpdateEmailAsync(username, emailModel.NewEmail);
+			email = emailModel.NewEmail;
+			feedback = "E‑posta başarıyla güncellendi.";
+			showEmailModal = false;
+			emailModel = new();
+		}
+		catch (Exception ex)
+		{
+			feedback = $"E‑posta güncellenemedi: {ex.Message}";
+		}
+	}
 
-    async Task SubmitEmailChangeAsync()
-    {
-        try
-        {
-            await AccountService.UpdateEmailAsync(username, emailModel.NewEmail);
-            email = emailModel.NewEmail;
-            feedback = "E‑posta başarıyla güncellendi.";
-            showEmailModal = false;
-            emailModel = new();
-        }
-        catch (Exception ex)
-        {
-            feedback = $"E‑posta güncellenemedi: {ex.Message}";
-        }
-    }
+	async Task SubmitPasswordChangeAsync()
+	{
+		if (pwdModel.NewPassword != pwdModel.ConfirmNewPassword)
+		{
+			feedback = "Yeni şifreler eşleşmiyor.";
+			return;
+		}
 
-    async Task SubmitPasswordChangeAsync()
-    {
-        if (pwdModel.NewPassword != pwdModel.ConfirmNewPassword)
-        {
-            feedback = "Yeni şifreler eşleşmiyor.";
-            return;
-        }
+		try
+		{
+			await AccountService.ChangePasswordAsync(username, pwdModel.CurrentPassword, pwdModel.NewPassword);
+			feedback = "Şifre başarıyla güncellendi.";
+			showPasswordModal = false;
+			pwdModel = new();
+		}
+		catch (Exception ex)
+		{
+			feedback = $"Şifre güncellenemedi: {ex.Message}";
+		}
+	}
 
-        try
-        {
-            await AccountService.ChangePasswordAsync(username, pwdModel.CurrentPassword, pwdModel.NewPassword);
-            feedback = "Şifre başarıyla güncellendi.";
-            showPasswordModal = false;
-            pwdModel = new();
-        }
-        catch (Exception ex)
-        {
-            feedback = $"Şifre güncellenemedi: {ex.Message}";
-        }
-    }
-
-    async Task ConfirmLogoutAsync()
-    {
-        showLogoutConfirm = false;
-        await LogoutAsync();
-    }
-
-    class EmailModel
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E‑posta zorunludur.")]
-        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Geçerli bir e‑posta giriniz.")]
-        public string NewEmail { get; set; } = string.Empty;
-    }
-
-    class PasswordModel
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Mevcut şifre zorunludur.")]
-        public string CurrentPassword { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Yeni şifre zorunludur.")]
-        [System.ComponentModel.DataAnnotations.MinLength(6, ErrorMessage = "En az 6 karakter olmalıdır.")]
-        public string NewPassword { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Yeni şifre tekrar zorunludur.")]
-        public string ConfirmNewPassword { get; set; } = string.Empty;
-    }
+	async Task ConfirmLogoutAsync()
+	{
+		showLogoutConfirm = false;
+		await LogoutAsync();
+	}
 }
 
