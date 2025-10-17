@@ -10,7 +10,7 @@ internal static class SpecificationEvaluator
     {
         IQueryable<T> query = inputQuery;
 
-        if (spec.Criteria is not null)
+		if (spec.Criteria is not null)
         {
             query = query.Where(spec.Criteria);
         }
@@ -35,12 +35,25 @@ internal static class SpecificationEvaluator
             query = query.Include(include);
         }
 
-        if (spec.AsNoTracking)
+		if (spec.AsNoTracking)
         {
             query = query.AsNoTracking();
         }
 
-        return query;
+		return query;
     }
+
+	public static IQueryable<TResult> GetQuery<T, TResult>(IQueryable<T> inputQuery, BaseSpecification<T, TResult> spec)
+	 where T : class
+	{
+		var entityQuery = GetQuery(inputQuery, (ISpecification<T>)spec);
+
+		if (spec.Selector is not null)
+		{
+			return entityQuery.Select(spec.Selector);
+		}
+
+		throw new InvalidOperationException("Projection specification must provide a Selector expression.");
+	}
 }
 

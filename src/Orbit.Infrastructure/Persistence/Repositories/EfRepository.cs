@@ -6,79 +6,87 @@ using Orbit.Infrastructure.Persistence.Specifications;
 namespace Orbit.Infrastructure.Persistence.Repositories;
 
 internal sealed class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
-    where TAggregate : Entity<TId>, IAggregateRoot
+	where TAggregate : Entity<TId>, IAggregateRoot
 {
-    private readonly AppDbContext _dbContext;
-    private readonly DbSet<TAggregate> _set;
+	private readonly AppDbContext _dbContext;
+	private readonly DbSet<TAggregate> _set;
 
-    public EfRepository(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-        _set = _dbContext.Set<TAggregate>();
-    }
+	public EfRepository(AppDbContext dbContext)
+	{
+		_dbContext = dbContext;
+		_set = _dbContext.Set<TAggregate>();
+	}
 
-    // IReadRepository
-    public async Task<TAggregate?> GetByIdAsync(TId id, CancellationToken cancellationToken = default)
-    {
-        // Note: FindAsync returns a tracked entity if found in the context.
-        // For read-heavy scenarios requiring no tracking, prefer query patterns.
-        var entity = await _set.FindAsync(new object?[] { id }, cancellationToken);
-        return entity;
-    }
+	// IReadRepository
+	public async Task<TAggregate?> GetByIdAsync(TId id, CancellationToken cancellationToken = default)
+	{
+		// Note: FindAsync returns a tracked entity if found in the context.
+		// For read-heavy scenarios requiring no tracking, prefer query patterns.
+		var entity = await _set.FindAsync(new object?[] { id }, cancellationToken);
+		return entity;
+	}
 
-    public async Task<IReadOnlyList<TAggregate>> ListAsync(
-        Expression<Func<TAggregate, bool>>? predicate = null,
-        CancellationToken cancellationToken = default)
-    {
-        IQueryable<TAggregate> query = _set.AsNoTracking();
-        if (predicate is not null)
-        {
-            query = query.Where(predicate);
-        }
-        return await query.ToListAsync(cancellationToken);
-    }
+	public async Task<IReadOnlyList<TAggregate>> ListAsync(
+		Expression<Func<TAggregate, bool>>? predicate = null,
+		CancellationToken cancellationToken = default)
+	{
+		IQueryable<TAggregate> query = _set.AsNoTracking();
+		if (predicate is not null)
+		{
+			query = query.Where(predicate);
+		}
+		return await query.ToListAsync(cancellationToken);
+	}
 
-    public Task<bool> AnyAsync(
-        Expression<Func<TAggregate, bool>> predicate,
-        CancellationToken cancellationToken = default)
-        => _set.AsNoTracking().AnyAsync(predicate, cancellationToken);
+	public async Task<IReadOnlyList<TResult>> ListAsync<TResult>(
+				BaseSpecification<TAggregate, TResult> specification,
+				CancellationToken cancellationToken = default)
+	{
+		var query = SpecificationEvaluator.GetQuery<TAggregate, TResult>(_set.AsQueryable(), specification);
+		return await query.ToListAsync(cancellationToken);
+	}
 
-    public Task<int> CountAsync(
-        Expression<Func<TAggregate, bool>>? predicate = null,
-        CancellationToken cancellationToken = default)
-        => predicate is null
-            ? _set.AsNoTracking().CountAsync(cancellationToken)
-            : _set.AsNoTracking().CountAsync(predicate, cancellationToken);
+	public Task<bool> AnyAsync(
+		Expression<Func<TAggregate, bool>> predicate,
+		CancellationToken cancellationToken = default)
+		=> _set.AsNoTracking().AnyAsync(predicate, cancellationToken);
 
-    public async Task<IReadOnlyList<TAggregate>> ListAsync(
-        ISpecification<TAggregate> specification,
-        CancellationToken cancellationToken = default)
-    {
-        var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
-        return await query.ToListAsync(cancellationToken);
-    }
+	public Task<int> CountAsync(
+		Expression<Func<TAggregate, bool>>? predicate = null,
+		CancellationToken cancellationToken = default)
+		=> predicate is null
+			? _set.AsNoTracking().CountAsync(cancellationToken)
+			: _set.AsNoTracking().CountAsync(predicate, cancellationToken);
 
-    public Task<int> CountAsync(
-        ISpecification<TAggregate> specification,
-        CancellationToken cancellationToken = default)
-    {
-        var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
-        return query.CountAsync(cancellationToken);
-    }
+	public async Task<IReadOnlyList<TAggregate>> ListAsync(
+		ISpecification<TAggregate> specification,
+		CancellationToken cancellationToken = default)
+	{
+		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
+		return await query.ToListAsync(cancellationToken);
+	}
 
-    public async Task<TAggregate?> FirstOrDefaultAsync(
-        ISpecification<TAggregate> specification,
-        CancellationToken cancellationToken = default)
-    {
-        var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
-        return await query.FirstOrDefaultAsync(cancellationToken);
-    }
+	public Task<int> CountAsync(
+		ISpecification<TAggregate> specification,
+		CancellationToken cancellationToken = default)
+	{
+		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
+		return query.CountAsync(cancellationToken);
+	}
 
-    // IWriteRepository
-    public Task AddAsync(TAggregate entity, CancellationToken cancellationToken = default)
-        => _set.AddAsync(entity, cancellationToken).AsTask();
+	public async Task<TAggregate?> FirstOrDefaultAsync(
+		ISpecification<TAggregate> specification,
+		CancellationToken cancellationToken = default)
+	{
+		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
+		return await query.FirstOrDefaultAsync(cancellationToken);
+	}
 
-    public void Update(TAggregate entity) => _set.Update(entity);
+	// IWriteRepository
+	public Task AddAsync(TAggregate entity, CancellationToken cancellationToken = default)
+		=> _set.AddAsync(entity, cancellationToken).AsTask();
 
-    public void Remove(TAggregate entity) => _set.Remove(entity);
+	public void Update(TAggregate entity) => _set.Update(entity);
+
+	public void Remove(TAggregate entity) => _set.Remove(entity);
 }

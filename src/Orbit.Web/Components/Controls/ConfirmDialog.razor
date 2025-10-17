@@ -1,0 +1,33 @@
+@if (Visible)
+{
+	<div class="flex items-center justify-center" style="position:fixed;inset:0;z-index:2000;">
+		<div class="fixed inset-0 bg-black/50" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:2000;" @onclick="OnCancel"></div>
+		<div class="w-full max-w-md rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark p-6 shadow-xl" style="position:relative;z-index:2001;">
+			@if (!string.IsNullOrWhiteSpace(Title))
+			{
+				<h3 class="text-lg font-semibold mb-3">@Title</h3>
+			}
+			@if (!string.IsNullOrWhiteSpace(Message))
+			{
+				<p class="text-sm text-subtext-light dark:text-subtext-dark mb-6">@Message</p>
+			}
+			<div class="flex justify-end gap-2">
+				<button class="rounded-md px-4 py-2 bg-gray-200 dark:bg-gray-700" @onclick="OnCancel">@CancelText</button>
+				<button class="px-4 py-2 rounded-md font-semibold shadow focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+						style="background-color:#dc2626;color:#ffffff;" @onclick="OnConfirm">@ConfirmText</button>
+			</div>
+		</div>
+	</div>
+}
+
+@code {
+	[Parameter] public bool Visible { get; set; }
+	[Parameter] public string? Title { get; set; }
+	[Parameter] public string? Message { get; set; }
+	[Parameter] public string ConfirmText { get; set; } = "Evet";
+	[Parameter] public string CancelText { get; set; } = "İptal";
+	[Parameter] public EventCallback OnConfirm { get; set; }
+	[Parameter] public EventCallback OnCancel { get; set; }
+}
+
+

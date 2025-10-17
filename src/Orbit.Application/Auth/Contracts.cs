@@ -18,7 +18,6 @@ public interface ITokenService
     string CreateToken(Guid userId, string username, string email, IEnumerable<string> roles, DateTime nowUtc, out DateTime expiresAtUtc);
 }
 
-// Abstraction to provide request metadata (keeps Application decoupled from ASP.NET)
 public interface IClientContext
 {
     string? RemoteIp { get; }

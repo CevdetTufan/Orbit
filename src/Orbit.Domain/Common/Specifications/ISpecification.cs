@@ -4,7 +4,7 @@ namespace Orbit.Domain.Common;
 
 public interface ISpecification<T>
 {
-    Expression<Func<T, bool>>? Criteria { get; }
+	Expression<Func<T, bool>>? Criteria { get; }
 
     List<Expression<Func<T, object>>> Includes { get; }
 
@@ -18,6 +18,11 @@ public interface ISpecification<T>
     bool AsNoTracking { get; }
 }
 
+public interface ISpecification<T, TResult> : ISpecification<T>
+{
+	Expression<Func<T, TResult>>? Selector { get; }
+}
+
 public abstract class BaseSpecification<T> : ISpecification<T>
 {
     protected BaseSpecification(Expression<Func<T, bool>>? criteria = null)
@@ -25,7 +30,7 @@ public abstract class BaseSpecification<T> : ISpecification<T>
         Criteria = criteria;
     }
 
-    public Expression<Func<T, bool>>? Criteria { get; }
+	public Expression<Func<T, bool>>? Criteria { get; }
     public List<Expression<Func<T, object>>> Includes { get; } = new();
     public Expression<Func<T, object>>? OrderBy { get; private set; }
     public Expression<Func<T, object>>? OrderByDescending { get; private set; }
@@ -34,7 +39,8 @@ public abstract class BaseSpecification<T> : ISpecification<T>
     public bool IsPagingEnabled { get; private set; }
     public bool AsNoTracking { get; private set; } = true;
 
-    protected void AddInclude(Expression<Func<T, object>> includeExpression)
+	    
+	protected void AddInclude(Expression<Func<T, object>> includeExpression)
         => Includes.Add(includeExpression);
 
     protected void ApplyOrderBy(Expression<Func<T, object>> orderByExpression)
@@ -51,5 +57,15 @@ public abstract class BaseSpecification<T> : ISpecification<T>
     }
 
     protected void DisableTracking() => AsNoTracking = false;
+}
+
+public abstract class BaseSpecification<T, TResult> : BaseSpecification<T>, ISpecification<T, TResult>
+{
+	protected BaseSpecification(Expression<Func<T, bool>>? criteria = null) : base(criteria) { }
+
+	public Expression<Func<T, TResult>>? Selector { get; protected set; }
+
+	protected void ApplySelector(Expression<Func<T, TResult>> selector)
+		=> Selector = selector;
 }
 
