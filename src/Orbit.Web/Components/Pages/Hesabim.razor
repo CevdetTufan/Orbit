@@ -60,7 +60,8 @@
                                 <span>—</span>
                             }
                         </td>
-                        <td class="px-6 py-4 text-right">                           
+                        <td class="px-6 py-4 text-right">
+                            <button class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-sm text-white" @onclick="(()=> showLogoutConfirm = true)">Çıkış Yap</button>
                         </td>
                     </tr>
 
@@ -74,6 +75,14 @@
     {
         <div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
     }
+
+    <ConfirmDialog Visible="@showLogoutConfirm"
+                   Title="Oturumu kapat"
+                   Message="Çıkış yapmak istediğinize emin misiniz?"
+                   ConfirmText="Evet, çıkış yap"
+                   CancelText="İptal"
+                   OnConfirm="ConfirmLogoutAsync"
+                   OnCancel="(()=> showLogoutConfirm = false)" />
     else
     {
         <div class="mt-8">
@@ -287,6 +296,7 @@
     string feedback = string.Empty;
     bool showEmailModal = false;
     bool showPasswordModal = false;
+    bool showLogoutConfirm = false;
 
     EmailModel emailModel = new();
     PasswordModel pwdModel = new();
@@ -329,6 +339,12 @@
         {
             feedback = $"Şifre güncellenemedi: {ex.Message}";
         }
+    }
+
+    async Task ConfirmLogoutAsync()
+    {
+        showLogoutConfirm = false;
+        await LogoutAsync();
     }
 
     class EmailModel

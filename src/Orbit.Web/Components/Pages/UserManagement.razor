@@ -33,50 +33,55 @@
 			</div>
 
 			<div class="overflow-x-auto">
-				<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
-					<thead>
-						<tr>
-							<th class="px-3 py-2 text-left text-sm font-semibold">Name</th>
-							<th class="px-3 py-2 text-left text-sm font-semibold">Description</th>
-							<th class="px-3 py-2 text-right text-sm font-semibold">Actions</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-border-light dark:divide-border-dark">
-						@foreach (var r in roles)
-						{
-							<tr>
-								<td class="px-3 py-2">
-									@if (editRole?.Id == r.Id)
-									{
-										<input @bind="editRoleName" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
-									}
-									else { @r.Name }
-								</td>
-								<td class="px-3 py-2">
-									@if (editRole?.Id == r.Id)
-									{
-										<input @bind="editRoleDescription" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
-									}
-									else { @r.Description }
-								</td>
-								<td class="px-3 py-2 text-right space-x-2">
-									@if (editRole?.Id == r.Id)
-									{
-										<button @onclick="() => SaveEditAsync(r.Id)" class="rounded-md bg-primary text-white px-3 py-1 text-sm">Save</button>
-										<button @onclick="CancelEdit" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">Cancel</button>
-									}
-									else
-									{
-										<button @onclick="() => BeginEdit(r)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Edit</button>
-										<button @onclick="() => DeleteRoleAsync(r.Id)" disabled="@(!deletableRoleIds.Contains(r.Id))" class="rounded-md px-3 py-1 text-sm @(deletableRoleIds.Contains(r.Id) ? "bg-red-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Delete</button>
-									}
-								</td>
-							</tr>
-						}
-					</tbody>
-				</table>
+				<DataGrid TItem="Orbit.Application.Authorization.RoleDto"
+						 Items="roles"
+						 Title="Roles"
+						 EnablePaging="false"
+						 Loading="loadingRoles">
+					<HeaderTemplate>
+						<th class="px-6 py-3">Name</th>
+						<th class="px-6 py-3">Description</th>
+						<th class="px-6 py-3 text-right">İşlemler</th>
+					</HeaderTemplate>
+					<RowTemplate>
+						<td class="px-6 py-2">
+							@if (editRole?.Id == context.Id)
+							{
+								<input @bind="editRoleName" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
+							}
+							else { @context.Name }
+						</td>
+						<td class="px-6 py-2">
+							@if (editRole?.Id == context.Id)
+							{
+								<input @bind="editRoleDescription" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
+							}
+							else { @context.Description }
+						</td>
+						<td class="px-6 py-2 text-right space-x-2">
+							@if (editRole?.Id == context.Id)
+							{
+								<button @onclick="() => SaveEditAsync(context.Id)" class="rounded-md bg-primary text-white px-3 py-1">Kaydet</button>
+								<button @onclick="CancelEdit" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">İptal</button>
+							}
+							else
+							{
+								<button @onclick="() => BeginEdit(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
+								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!deletableRoleIds.Contains(context.Id))" title="@(!deletableRoleIds.Contains(context.Id) ? "Bu rol, kullanıcı atanmış olduğu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(deletableRoleIds.Contains(context.Id) ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
+							}
+						</td>
+					</RowTemplate>
+				</DataGrid>
 			</div>
 		</div>
+
+        <ConfirmDialog Visible="@showDeleteModal"
+                       Title="Rolü sil"
+                       Message='@($"\"{deleteTargetName}\" rolünü silmek istediğinize emin misiniz?")'
+                       ConfirmText="Evet"
+                       CancelText="İptal"
+                       OnConfirm="ConfirmDeleteAsync"
+                       OnCancel="CloseDeleteModal" />
     }
     else if (activeTab == "permissions")
     {
@@ -91,6 +96,7 @@
 @code {
     [Inject] Orbit.Application.Authorization.IRoleQueries RoleQueries { get; set; } = default!;
     [Inject] Orbit.Application.Authorization.IRoleCommands RoleCommands { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
 
     string activeTab = "role";
     string? roleName;
@@ -101,6 +107,10 @@
     Orbit.Application.Authorization.RoleDto? editRole;
     string? editRoleName;
     string? editRoleDescription;
+	bool loadingRoles;
+    bool showDeleteModal;
+    Guid? deleteTargetId;
+    string? deleteTargetName;
 
     string GetTabClass(string tab)
         => (activeTab == tab)
@@ -114,17 +124,25 @@
         await LoadRolesAsync();
     }
 
-    async Task LoadRolesAsync()
-    {
-        roles = (await RoleQueries.GetAllAsync()).ToList();
-        deletableRoleIds = new HashSet<Guid>();
-        foreach (var r in roles)
-        {
-            if (await RoleQueries.CanDeleteAsync(r.Id))
-                deletableRoleIds.Add(r.Id);
-        }
-        StateHasChanged();
-    }
+	async Task LoadRolesAsync()
+	{
+		loadingRoles = true;
+		try
+		{
+			roles = (await RoleQueries.GetAllAsync()).ToList();
+			deletableRoleIds = new HashSet<Guid>();
+			foreach (var r in roles)
+			{
+				if (await RoleQueries.CanDeleteAsync(r.Id))
+					deletableRoleIds.Add(r.Id);
+			}
+		}
+		finally
+		{
+			loadingRoles = false;
+		}
+		StateHasChanged();
+	}
 
     async Task CreateRoleAsync()
     {
@@ -157,10 +175,30 @@
         await LoadRolesAsync();
     }
 
-    async Task DeleteRoleAsync(Guid id)
+    void OpenDeleteModal(Guid id, string name)
     {
-        var deleted = await RoleCommands.DeleteIfNoUsersAsync(id);
+        deleteTargetId = id;
+        deleteTargetName = name;
+        showDeleteModal = true;
+    }
+
+    void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        deleteTargetId = null;
+        deleteTargetName = null;
+    }
+
+    async Task ConfirmDeleteAsync()
+    {
+        if (deleteTargetId is null)
+            return;
+
+        var deleted = await RoleCommands.DeleteIfNoUsersAsync(deleteTargetId.Value);
         if (deleted)
+        {
+            CloseDeleteModal();
             await LoadRolesAsync();
+        }
     }
 }
