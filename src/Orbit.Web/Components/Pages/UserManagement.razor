@@ -14,22 +14,69 @@
     @if (activeTab == "role")
     {
         <div class="space-y-6 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6 shadow-sm">
-            <div>
-                <label class="block text-sm font-medium mb-2">Role Name</label>
-                <input @bind="roleName" placeholder="Enter role name"
-                       class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-2">Role Description</label>
-                <textarea @bind="roleDescription" rows="4" placeholder="Enter role description"
-                          class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"></textarea>
-            </div>
-            <div class="pt-2 flex justify-center">
-                <button class="rounded-md bg-primary text-white font-semibold px-6 py-2.5 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary">
-                    Create Role
-                </button>
-            </div>
-        </div>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<div>
+					<label class="block text-sm font-medium mb-2">Role Name</label>
+					<input @bind="roleName" placeholder="Enter role name"
+						   class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" />
+				</div>
+				<div class="md:col-span-2">
+					<label class="block text-sm font-medium mb-2">Role Description</label>
+					<input @bind="roleDescription" placeholder="Enter role description"
+						   class="block w-full appearance-none rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-3 py-2 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" />
+				</div>
+			</div>
+			<div class="pt-2 flex justify-end">
+				<button @onclick="CreateRoleAsync" class="rounded-md bg-primary text-white font-semibold px-6 py-2.5 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary">
+					Create Role
+				</button>
+			</div>
+
+			<div class="overflow-x-auto">
+				<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+					<thead>
+						<tr>
+							<th class="px-3 py-2 text-left text-sm font-semibold">Name</th>
+							<th class="px-3 py-2 text-left text-sm font-semibold">Description</th>
+							<th class="px-3 py-2 text-right text-sm font-semibold">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-border-light dark:divide-border-dark">
+						@foreach (var r in roles)
+						{
+							<tr>
+								<td class="px-3 py-2">
+									@if (editRole?.Id == r.Id)
+									{
+										<input @bind="editRoleName" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
+									}
+									else { @r.Name }
+								</td>
+								<td class="px-3 py-2">
+									@if (editRole?.Id == r.Id)
+									{
+										<input @bind="editRoleDescription" class="w-full rounded-md border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-2 py-1 text-sm" />
+									}
+									else { @r.Description }
+								</td>
+								<td class="px-3 py-2 text-right space-x-2">
+									@if (editRole?.Id == r.Id)
+									{
+										<button @onclick="() => SaveEditAsync(r.Id)" class="rounded-md bg-primary text-white px-3 py-1 text-sm">Save</button>
+										<button @onclick="CancelEdit" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">Cancel</button>
+									}
+									else
+									{
+										<button @onclick="() => BeginEdit(r)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Edit</button>
+										<button @onclick="() => DeleteRoleAsync(r.Id)" disabled="@(!deletableRoleIds.Contains(r.Id))" class="rounded-md px-3 py-1 text-sm @(deletableRoleIds.Contains(r.Id) ? "bg-red-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Delete</button>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
     }
     else if (activeTab == "permissions")
     {
@@ -42,9 +89,18 @@
 </div>
 
 @code {
+    [Inject] Orbit.Application.Authorization.IRoleQueries RoleQueries { get; set; } = default!;
+    [Inject] Orbit.Application.Authorization.IRoleCommands RoleCommands { get; set; } = default!;
+
     string activeTab = "role";
     string? roleName;
     string? roleDescription;
+
+    List<Orbit.Application.Authorization.RoleDto> roles = new();
+    HashSet<Guid> deletableRoleIds = new();
+    Orbit.Application.Authorization.RoleDto? editRole;
+    string? editRoleName;
+    string? editRoleDescription;
 
     string GetTabClass(string tab)
         => (activeTab == tab)
@@ -52,4 +108,59 @@
             : "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-subtext-light dark:text-subtext-dark hover:bg-primary/10 hover:text-primary";
 
     void SetTab(string tab) => activeTab = tab;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    async Task LoadRolesAsync()
+    {
+        roles = (await RoleQueries.GetAllAsync()).ToList();
+        deletableRoleIds = new HashSet<Guid>();
+        foreach (var r in roles)
+        {
+            if (await RoleQueries.CanDeleteAsync(r.Id))
+                deletableRoleIds.Add(r.Id);
+        }
+        StateHasChanged();
+    }
+
+    async Task CreateRoleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(roleName)) return;
+        await RoleCommands.CreateAsync(roleName!, roleDescription);
+        roleName = null;
+        roleDescription = null;
+        await LoadRolesAsync();
+    }
+
+    void BeginEdit(Orbit.Application.Authorization.RoleDto r)
+    {
+        editRole = r;
+        editRoleName = r.Name;
+        editRoleDescription = r.Description;
+    }
+
+    void CancelEdit()
+    {
+        editRole = null;
+        editRoleName = null;
+        editRoleDescription = null;
+    }
+
+    async Task SaveEditAsync(Guid id)
+    {
+        if (editRole is null) return;
+        await RoleCommands.UpdateAsync(id, editRoleName ?? string.Empty, editRoleDescription);
+        CancelEdit();
+        await LoadRolesAsync();
+    }
+
+    async Task DeleteRoleAsync(Guid id)
+    {
+        var deleted = await RoleCommands.DeleteIfNoUsersAsync(id);
+        if (deleted)
+            await LoadRolesAsync();
+    }
 }
