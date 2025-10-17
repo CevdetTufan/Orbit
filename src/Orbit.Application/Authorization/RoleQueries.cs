@@ -6,7 +6,6 @@ namespace Orbit.Application.Authorization;
 public interface IRoleQueries
 {
 	Task<IReadOnlyList<RoleDto>> GetAllAsync(CancellationToken cancellationToken = default);
-	Task<bool> CanDeleteAsync(Guid roleId, CancellationToken cancellationToken = default);
 }
 
 internal sealed class RoleQueries : IRoleQueries
@@ -23,19 +22,16 @@ internal sealed class RoleQueries : IRoleQueries
 	public async Task<IReadOnlyList<RoleDto>> GetAllAsync(CancellationToken cancellationToken = default)
 	{
 		var roles = await _roles.ListAsync(cancellationToken: cancellationToken);
-		return roles
-			.Select(r => new RoleDto(r.Id, r.Name, r.Description))
-			.ToList();
-	}
-
-	public async Task<bool> CanDeleteAsync(Guid roleId, CancellationToken cancellationToken = default)
-	{
-		// A role is deletable if no user has it assigned
-		var anyUserHasRole = await _users.AnyAsync(u => u.Roles.Any(ur => ur.RoleId == roleId), cancellationToken);
-		return !anyUserHasRole;
+		var list = new List<RoleDto>(roles.Count);
+		foreach (var r in roles)
+		{
+			var anyUserHasRole = await _users.AnyAsync(u => u.Roles.Any(ur => ur.RoleId == r.Id), cancellationToken);
+			list.Add(new RoleDto(r.Id, r.Name, r.Description, CanDelete: !anyUserHasRole));
+		}
+		return list;
 	}
 }
 
-public sealed record RoleDto(Guid Id, string Name, string? Description);
+public sealed record RoleDto(Guid Id, string Name, string? Description, bool CanDelete);
 
 

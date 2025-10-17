@@ -67,7 +67,7 @@
 							else
 							{
 								<button @onclick="() => BeginEdit(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
-								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!deletableRoleIds.Contains(context.Id))" title="@(!deletableRoleIds.Contains(context.Id) ? "Bu rol, kullanıcı atanmış olduğu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(deletableRoleIds.Contains(context.Id) ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
+								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!context.CanDelete)" title="@(!context.CanDelete ? "Bu rol, kullanıcı atanmış olduğu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
 							}
 						</td>
 					</RowTemplate>
@@ -103,7 +103,7 @@
     string? roleDescription;
 
     List<Orbit.Application.Authorization.RoleDto> roles = new();
-    HashSet<Guid> deletableRoleIds = new();
+    
     Orbit.Application.Authorization.RoleDto? editRole;
     string? editRoleName;
     string? editRoleDescription;
@@ -130,12 +130,6 @@
 		try
 		{
 			roles = (await RoleQueries.GetAllAsync()).ToList();
-			deletableRoleIds = new HashSet<Guid>();
-			foreach (var r in roles)
-			{
-				if (await RoleQueries.CanDeleteAsync(r.Id))
-					deletableRoleIds.Add(r.Id);
-			}
 		}
 		finally
 		{
