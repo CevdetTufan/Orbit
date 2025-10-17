@@ -1,3 +1,5 @@
+using Orbit.Application.Authorization.Models;
+using Orbit.Application.Authorization.Specifications;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
 
@@ -21,17 +23,7 @@ internal sealed class RoleQueries : IRoleQueries
 
 	public async Task<IReadOnlyList<RoleDto>> GetAllAsync(CancellationToken cancellationToken = default)
 	{
-		var roles = await _roles.ListAsync(cancellationToken: cancellationToken);
-		var list = new List<RoleDto>(roles.Count);
-		foreach (var r in roles)
-		{
-			var anyUserHasRole = await _users.AnyAsync(u => u.Roles.Any(ur => ur.RoleId == r.Id), cancellationToken);
-			list.Add(new RoleDto(r.Id, r.Name, r.Description, CanDelete: !anyUserHasRole));
-		}
-		return list;
+		var spec = new RoleWithCanDeleteSpec();
+		return await _roles.ListAsync(spec, cancellationToken);
 	}
 }
-
-public sealed record RoleDto(Guid Id, string Name, string? Description, bool CanDelete);
-
-

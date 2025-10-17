@@ -1,4 +1,6 @@
 @page "/kullanici-yonetimi"
+@using Orbit.Application.Authorization
+@using Orbit.Application.Authorization.Models
 
 <PageTitle>User Management</PageTitle>
 
@@ -33,10 +35,10 @@
 			</div>
 
 			<div class="overflow-x-auto">
-				<DataGrid TItem="Orbit.Application.Authorization.RoleDto"
+                <DataGrid TItem="RoleDto"
 						 Items="roles"
 						 Title="Roles"
-						 EnablePaging="true"
+						 EnablePaging="false"
 						 Loading="loadingRoles">
 					<HeaderTemplate>
 						<th class="px-6 py-3">Name</th>
@@ -62,11 +64,11 @@
 							@if (editRole?.Id == context.Id)
 							{
 								<button @onclick="() => SaveEditAsync(context.Id)" class="rounded-md bg-primary text-white px-3 py-1">Kaydet</button>
-								<button @onclick="CancelEdit" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">İptal</button>
+                                <button @onclick="CancelEditRole" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">İptal</button>
 							}
 							else
 							{
-								<button @onclick="() => BeginEdit(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
+                                <button @onclick="() => BeginEditRole(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
 								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!context.CanDelete)" title="@(!context.CanDelete ? "Bu rol, kullanıcı atanmış olduğu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
 							}
 						</td>
@@ -94,17 +96,17 @@
 </div>
 
 @code {
-    [Inject] Orbit.Application.Authorization.IRoleQueries RoleQueries { get; set; } = default!;
-    [Inject] Orbit.Application.Authorization.IRoleCommands RoleCommands { get; set; } = default!;
+    [Inject] IRoleQueries RoleQueries { get; set; } = default!;
+    [Inject] IRoleCommands RoleCommands { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
 
     string activeTab = "role";
     string? roleName;
     string? roleDescription;
 
-    List<Orbit.Application.Authorization.RoleDto> roles = new();
+    List<RoleDto> roles = new();
     
-    Orbit.Application.Authorization.RoleDto? editRole;
+    RoleDto? editRole;
     string? editRoleName;
     string? editRoleDescription;
 	bool loadingRoles;
@@ -147,14 +149,14 @@
         await LoadRolesAsync();
     }
 
-    void BeginEdit(Orbit.Application.Authorization.RoleDto r)
+    void BeginEditRole(RoleDto r)
     {
         editRole = r;
         editRoleName = r.Name;
         editRoleDescription = r.Description;
     }
 
-    void CancelEdit()
+    void CancelEditRole()
     {
         editRole = null;
         editRoleName = null;
@@ -165,7 +167,7 @@
     {
         if (editRole is null) return;
         await RoleCommands.UpdateAsync(id, editRoleName ?? string.Empty, editRoleDescription);
-        CancelEdit();
+        CancelEditRole();
         await LoadRolesAsync();
     }
 
