@@ -1,0 +1,636 @@
+@using Orbit.Application.Authorization
+@using Orbit.Application.Authorization.Models
+@using static Orbit.Web.Components.Controls.MessageDialog
+
+<div class="max-w-7xl mx-auto">
+    @if (selectedRole == null)
+    {
+        <!-- Rol Seçim Kartý -->
+        <div class="bg-content-light dark:bg-content-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-primary/5 to-primary/10 px-6 py-5 border-b border-border-light dark:border-border-dark">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold text-text-light dark:text-text-dark">Rol Ýzin Yönetimi</h2>
+                        <p class="text-subtext-light dark:text-subtext-dark mt-1 text-sm">Ýzinlerini yönetmek istediðiniz rolü seçin</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <!-- Rol Sayýsý -->
+                        @if (!loadingRoles)
+                        {
+                            <div class="text-right">
+                                <span class="text-lg font-semibold text-primary">@roles.Count</span>
+                                <span class="text-subtext-light dark:text-subtext-dark text-sm"> rol</span>
+                            </div>
+                        }
+                        
+                        <!-- Görünüm Seçici -->
+                        <div class="flex items-center gap-2 bg-content-light dark:bg-content-dark rounded-lg p-1 border border-border-light dark:border-border-dark shadow-sm">
+                            <button @onclick='() => SetViewMode("grid")'
+                                    class="@GetViewButtonClass("grid") px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                            </button>
+                            <button @onclick='() => SetViewMode("list")'
+                                    class="@GetViewButtonClass("list") px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ýçerik -->
+            <div class="p-6">
+                @if (loadingRoles)
+                {
+                    <div class="flex flex-col items-center justify-center py-20">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <p class="mt-4 text-subtext-light dark:text-subtext-dark">Roller yükleniyor...</p>
+                    </div>
+                }
+                else if (!roles.Any())
+                {
+                    <div class="text-center py-20">
+                        <div class="mx-auto h-20 w-20 text-subtext-light dark:text-subtext-dark mb-4">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 515.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 20a7.962 7.962 0 01-5-1.709V15a2 2 0 00-2-2H3a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2v.291"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-text-light dark:text-text-dark">
+                            Henüz rol tanýmlanmamýþ
+                        </h3>
+                        <p class="text-subtext-light dark:text-subtext-dark mt-2 max-w-sm mx-auto">
+                            Sistem henüz rol içermemektedir.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    @if (roleViewMode == "grid")
+                    {
+                        <!-- Grid Görünüm -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            @foreach (var role in paginatedRoles)
+                            {
+                                <div class="group">
+                                    <button @onclick="() => SelectRoleAsync(role.Id)" 
+                                            class="w-full text-left p-5 border-2 border-border-light dark:border-border-dark rounded-xl hover:border-primary hover:shadow-xl transition-all duration-300 bg-content-light dark:bg-content-dark group-hover:bg-primary/5 shadow-md hover:shadow-2xl">
+                                        <div class="flex items-start justify-between mb-4">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
+                                                @role.Name.Substring(0, Math.Min(2, role.Name.Length)).ToUpper()
+                                            </div>
+                                            <svg class="w-5 h-5 text-subtext-light dark:text-subtext-dark group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </div>
+                                        
+                                        <h3 class="text-base font-bold text-text-light dark:text-text-dark group-hover:text-primary transition-colors truncate mb-2">
+                                            @role.Name
+                                        </h3>
+                                        
+                                        @if (!string.IsNullOrEmpty(role.Description))
+                                        {
+                                            <p class="text-sm text-subtext-light dark:text-subtext-dark line-clamp-2 leading-relaxed mb-3">
+                                                @role.Description
+                                            </p>
+                                        }
+                                        
+                                        <div class="flex items-center gap-2">
+                                            @if (!role.CanDelete)
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                    Sistem Rolü
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                    Özel Rol
+                                                </span>
+                                            }
+                                        </div>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Liste Görünüm -->
+                        <div class="space-y-2">
+                            @foreach (var role in paginatedRoles)
+                            {
+                                <button @onclick="() => SelectRoleAsync(role.Id)" 
+                                        class="w-full text-left p-4 border border-border-light dark:border-border-dark rounded-lg hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-content-light dark:bg-content-dark group">
+                                    <div class="flex items-center gap-6">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-lg flex items-center justify-center font-bold text-sm shadow-sm">
+                                            @role.Name.Substring(0, Math.Min(2, role.Name.Length)).ToUpper()
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-3 mb-1">
+                                                <h3 class="font-bold text-text-light dark:text-text-dark group-hover:text-primary transition-colors">
+                                                    @role.Name
+                                                </h3>
+                                                @if (!role.CanDelete)
+                                                {
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                        Sistem
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                        Özel
+                                                    </span>
+                                                }
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(role.Description))
+                                            {
+                                                <p class="text-sm text-subtext-light dark:text-subtext-dark truncate">
+                                                    @role.Description
+                                                </p>
+                                            }
+                                        </div>
+                                        <svg class="w-5 h-5 text-subtext-light dark:text-subtext-dark group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    <!-- Sayfalama -->
+                    @if (roles.Count > itemsPerPage)
+                    {
+                        <div class="flex items-center justify-between pt-8 border-t border-border-light dark:border-border-dark mt-8">
+                            <div class="text-sm text-subtext-light dark:text-subtext-dark">
+                                <span class="font-medium">@Math.Min((currentPage - 1) * itemsPerPage + 1, roles.Count)</span>
+                                -
+                                <span class="font-medium">@Math.Min(currentPage * itemsPerPage, roles.Count)</span>
+                                /
+                                <span class="font-medium">@roles.Count</span> rol
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @onclick="PreviousPage" 
+                                        disabled="@(currentPage <= 1)"
+                                        class="px-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+                                    Önceki
+                                </button>
+                                <span class="px-4 py-2 text-sm font-medium text-subtext-light dark:text-subtext-dark">
+                                    @currentPage / @totalPages
+                                </span>
+                                <button @onclick="NextPage" 
+                                        disabled="@(currentPage >= totalPages)"
+                                        class="px-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+                                    Sonraki
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Ýzin Yönetimi Ekraný -->
+        <div class="bg-content-light dark:bg-content-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-primary/5 to-primary/10 px-6 py-5 border-b border-border-light dark:border-border-dark">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">
+                            @selectedRole.Name.Substring(0, Math.Min(2, selectedRole.Name.Length)).ToUpper()
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-text-light dark:text-text-dark">@selectedRole.Name</h2>
+                            @if (!string.IsNullOrEmpty(selectedRole.Description))
+                            {
+                                <p class="text-subtext-light dark:text-subtext-dark text-sm">@selectedRole.Description</p>
+                            }
+                        </div>
+                    </div>
+                    <button @onclick="BackToRoleSelection"
+                            class="inline-flex items-center gap-2 px-4 py-2 border border-border-light dark:border-border-dark rounded-lg hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        <span class="font-medium">Geri Dön</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ýçerik -->
+            <div class="p-6">
+                @if (loadingPermissions)
+                {
+                    <div class="flex flex-col items-center justify-center py-20">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <p class="mt-4 text-subtext-light dark:text-subtext-dark">Ýzinler yükleniyor...</p>
+                    </div>
+                }
+                else
+                {
+                    <!-- Ýzin Grid'i -->
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <!-- Kullanýlabilir Ýzinler -->
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-text-light dark:text-text-dark">Kullanýlabilir Ýzinler</h3>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    @roleWithPermissions.AvailablePermissions.Count izin
+                                </span>
+                            </div>
+                            
+                            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                                @if (!roleWithPermissions.AvailablePermissions.Any())
+                                {
+                                    <div class="p-12 text-center">
+                                        <div class="mx-auto h-16 w-16 text-subtext-light dark:text-subtext-dark mb-4">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <p class="text-subtext-light dark:text-subtext-dark font-medium">
+                                            Tüm izinler bu role atanmýþ
+                                        </p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="max-h-80 overflow-y-auto">
+                                        @foreach (var permission in roleWithPermissions.AvailablePermissions)
+                                        {
+                                            <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark last:border-b-0 hover:bg-primary/5 transition-colors">
+                                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                    <div class="min-w-0">
+                                                        <div class="font-medium text-text-light dark:text-text-dark truncate">@permission.Code</div>
+                                                        @if (!string.IsNullOrEmpty(permission.Description))
+                                                        {
+                                                            <div class="text-xs text-subtext-light dark:text-subtext-dark truncate">@permission.Description</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <button @onclick="() => AssignPermissionAsync(permission.Id)"
+                                                        disabled="@processingPermissions.Contains(permission.Id)"
+                                                        class="ml-3 inline-flex items-center px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                                                    @if (processingPermissions.Contains(permission.Id))
+                                                    {
+                                                        <svg class="animate-spin -ml-1 mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    }
+                                                    Ata
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Atanmýþ Ýzinler -->
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-text-light dark:text-text-dark">Atanmýþ Ýzinler</h3>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    @roleWithPermissions.AssignedPermissions.Count izin
+                                </span>
+                            </div>
+                            
+                            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                                @if (!roleWithPermissions.AssignedPermissions.Any())
+                                {
+                                    <div class="p-12 text-center">
+                                        <div class="mx-auto h-16 w-16 text-subtext-light dark:text-subtext-dark mb-4">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                        </div>
+                                        <p class="text-subtext-light dark:text-subtext-dark font-medium">
+                                            Bu role henüz izin atanmamýþ
+                                        </p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="max-h-80 overflow-y-auto">
+                                        @foreach (var permission in roleWithPermissions.AssignedPermissions)
+                                        {
+                                            <div class="flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark last:border-b-0 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+                                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                    <div class="min-w-0">
+                                                        <div class="font-medium text-text-light dark:text-text-dark truncate">@permission.Code</div>
+                                                        @if (!string.IsNullOrEmpty(permission.Description))
+                                                        {
+                                                            <div class="text-xs text-subtext-light dark:text-subtext-dark truncate">@permission.Description</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <button @onclick="() => RemovePermissionAsync(permission.Id)"
+                                                        disabled="@processingPermissions.Contains(permission.Id)"
+                                                        class="ml-3 inline-flex items-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-red-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                                                    @if (processingPermissions.Contains(permission.Id))
+                                                    {
+                                                        <svg class="animate-spin -ml-1 mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    }
+                                                    Kaldýr
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toplu Ýþlem Butonlarý -->
+                    @if (roleWithPermissions.AvailablePermissions.Any() || roleWithPermissions.AssignedPermissions.Any())
+                    {
+                        <div class="mt-8 pt-6 border-t border-border-light dark:border-border-dark">
+                            <div class="flex flex-wrap gap-4 justify-center">
+                                @if (roleWithPermissions.AvailablePermissions.Any())
+                                {
+                                    <button @onclick="AssignAllPermissionsAsync"
+                                            disabled="@bulkOperationInProgress"
+                                            class="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg hover:shadow-xl">
+                                        @if (bulkOperationInProgress)
+                                        {
+                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        }
+                                        Tümünü Ata (@roleWithPermissions.AvailablePermissions.Count)
+                                    </button>
+                                }
+                                
+                                @if (roleWithPermissions.AssignedPermissions.Any())
+                                {
+                                    <button @onclick="RemoveAllPermissionsAsync"
+                                            disabled="@bulkOperationInProgress"
+                                            class="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-red-foreground rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg hover:shadow-xl">
+                                        @if (bulkOperationInProgress)
+                                        {
+                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        }
+                                        Tümünü Kaldýr (@roleWithPermissions.AssignedPermissions.Count)
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<MessageDialog Visible="@showMessageDialog"
+               Type="@messageType"
+               Title="@messageTitle"
+               Message="@messageContent"
+               OnOk="CloseMessageDialog" />
+
+@code {
+    [Inject] IRoleQueries RoleQueries { get; set; } = default!;
+    [Inject] IPermissionQueries PermissionQueries { get; set; } = default!;
+    [Inject] IRolePermissionCommands RolePermissionCommands { get; set; } = default!;
+
+    List<RoleDto> roles = new();
+    List<RoleDto> paginatedRoles = new();
+    RoleWithPermissionsDto roleWithPermissions = new(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+    RoleDto? selectedRole;
+
+    // State
+    string roleViewMode = "list";
+    int currentPage = 1;
+    readonly int itemsPerPage = 12;
+    int totalPages => (int)Math.Ceiling((double)roles.Count / itemsPerPage);
+
+    // Loading
+    bool loadingRoles = true;
+    bool loadingPermissions;
+    bool bulkOperationInProgress;
+    readonly HashSet<Guid> processingPermissions = new();
+
+    // Dialog
+    bool showMessageDialog;
+    string? messageTitle;
+    string? messageContent;
+    MessageType messageType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    async Task LoadRolesAsync()
+    {
+        loadingRoles = true;
+        try
+        {
+            roles = (await RoleQueries.GetAllAsync()).ToList();
+            ApplyPagination();
+        }
+        finally
+        {
+            loadingRoles = false;
+        }
+        StateHasChanged();
+    }
+
+    void ApplyPagination()
+    {
+        if (currentPage > totalPages && totalPages > 0)
+            currentPage = 1;
+
+        var skip = (currentPage - 1) * itemsPerPage;
+        paginatedRoles = roles.Skip(skip).Take(itemsPerPage).ToList();
+    }
+
+    void SetViewMode(string mode)
+    {
+        roleViewMode = mode;
+        StateHasChanged();
+    }
+
+    string GetViewButtonClass(string mode)
+    {
+        return roleViewMode == mode 
+            ? "bg-primary text-primary-foreground shadow-md border border-primary/20" 
+            : "text-subtext-light dark:text-subtext-dark hover:text-text-light dark:hover:text-text-dark hover:bg-hover-light dark:hover:bg-hover-dark";
+    }
+
+    void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            ApplyPagination();
+            StateHasChanged();
+        }
+    }
+
+    void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            ApplyPagination();
+            StateHasChanged();
+        }
+    }
+
+    async Task SelectRoleAsync(Guid roleId)
+    {
+        selectedRole = roles.FirstOrDefault(r => r.Id == roleId);
+        if (selectedRole == null) return;
+        await LoadRolePermissionsAsync(roleId);
+    }
+
+    async Task LoadRolePermissionsAsync(Guid roleId)
+    {
+        loadingPermissions = true;
+        try
+        {
+            var result = await PermissionQueries.GetRoleWithPermissionsAsync(roleId);
+            roleWithPermissions = result ?? new RoleWithPermissionsDto(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler yüklenirken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            loadingPermissions = false;
+        }
+        StateHasChanged();
+    }
+
+    void BackToRoleSelection()
+    {
+        selectedRole = null;
+        roleWithPermissions = new RoleWithPermissionsDto(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+    }
+
+    async Task AssignPermissionAsync(Guid permissionId)
+    {
+        if (selectedRole == null) return;
+        processingPermissions.Add(permissionId);
+        StateHasChanged();
+        try
+        {
+            await RolePermissionCommands.AssignPermissionToRoleAsync(selectedRole.Id, permissionId);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzin atanýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            processingPermissions.Remove(permissionId);
+            StateHasChanged();
+        }
+    }
+
+    async Task RemovePermissionAsync(Guid permissionId)
+    {
+        if (selectedRole == null) return;
+        processingPermissions.Add(permissionId);
+        StateHasChanged();
+        try
+        {
+            await RolePermissionCommands.RemovePermissionFromRoleAsync(selectedRole.Id, permissionId);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzin kaldýrýlýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            processingPermissions.Remove(permissionId);
+            StateHasChanged();
+        }
+    }
+
+    async Task AssignAllPermissionsAsync()
+    {
+        if (selectedRole == null || !roleWithPermissions.AvailablePermissions.Any()) return;
+        bulkOperationInProgress = true;
+        StateHasChanged();
+        try
+        {
+            var permissionIds = roleWithPermissions.AvailablePermissions.Select(p => p.Id);
+            await RolePermissionCommands.AssignMultiplePermissionsToRoleAsync(selectedRole.Id, permissionIds);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+            ShowMessage("Baþarýlý", "Tüm izinler baþarýyla atandý.", MessageType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler atanýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            bulkOperationInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task RemoveAllPermissionsAsync()
+    {
+        if (selectedRole == null || !roleWithPermissions.AssignedPermissions.Any()) return;
+        bulkOperationInProgress = true;
+        StateHasChanged();
+        try
+        {
+            var permissionIds = roleWithPermissions.AssignedPermissions.Select(p => p.Id);
+            await RolePermissionCommands.RemoveMultiplePermissionsFromRoleAsync(selectedRole.Id, permissionIds);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+            ShowMessage("Baþarýlý", "Tüm izinler baþarýyla kaldýrýldý.", MessageType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler kaldýrýlýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            bulkOperationInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    void ShowMessage(string title, string message, MessageType type)
+    {
+        messageTitle = title;
+        messageContent = message;
+        messageType = type;
+        showMessageDialog = true;
+        StateHasChanged();
+    }
+
+    void CloseMessageDialog()
+    {
+        showMessageDialog = false;
+        messageTitle = null;
+        messageContent = null;
+        StateHasChanged();
+    }
+}

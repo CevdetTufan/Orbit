@@ -18,6 +18,8 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IRoleQueries, RoleQueries>();
         services.AddScoped<IRoleCommands, RoleCommands>();
+        services.AddScoped<IPermissionQueries, PermissionQueries>();
+        services.AddScoped<IRolePermissionCommands, RolePermissionCommands>();
         return services;
     }
 }
