@@ -1,0 +1,389 @@
+@using Orbit.Application.Authorization
+@using Orbit.Application.Authorization.Models
+@using static Orbit.Web.Components.Controls.MessageDialog
+
+<div class="space-y-6">
+    @if (selectedRole == null)
+    {
+        <div class="bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h3 class="text-lg font-medium text-text-light dark:text-text-dark mb-4">Rol Seçin</h3>
+            <p class="text-sm text-subtext-light dark:text-subtext-dark mb-4">Ýzin yönetimi yapmak için bir rol seçin:</p>
+            
+            <div class="grid gap-3 max-h-60 overflow-y-auto">
+                @if (loadingRoles)
+                {
+                    <div class="flex items-center justify-center py-8">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                        <span class="ml-2 text-sm text-subtext-light dark:text-subtext-dark">Roller yükleniyor...</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var role in roles)
+                    {
+                        <button @onclick="() => SelectRoleAsync(role.Id)"
+                                class="flex items-center justify-between p-3 border border-border-light dark:border-border-dark rounded-md hover:bg-primary/10 hover:border-primary text-left transition-colors">
+                            <div>
+                                <div class="font-medium text-text-light dark:text-text-dark">@role.Name</div>
+                                @if (!string.IsNullOrEmpty(role.Description))
+                                {
+                                    <div class="text-sm text-subtext-light dark:text-subtext-dark">@role.Description</div>
+                                }
+                            </div>
+                            <svg class="w-5 h-5 text-subtext-light dark:text-subtext-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-medium text-text-light dark:text-text-dark">@selectedRole.Name - Ýzin Yönetimi</h3>
+                    @if (!string.IsNullOrEmpty(selectedRole.Description))
+                    {
+                        <p class="text-sm text-subtext-light dark:text-subtext-dark">@selectedRole.Description</p>
+                    }
+                </div>
+                <button @onclick="BackToRoleSelection"
+                        class="px-4 py-2 border border-border-light dark:border-border-dark rounded-md hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+                    ? Geri Dön
+                </button>
+            </div>
+
+            @if (loadingPermissions)
+            {
+                <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span class="ml-2 text-sm text-subtext-light dark:text-subtext-dark">Ýzinler yükleniyor...</span>
+                </div>
+            }
+            else
+            {
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Available Permissions -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-medium text-text-light dark:text-text-dark">Kullanýlabilir Ýzinler</h4>
+                            <span class="text-sm text-subtext-light dark:text-subtext-dark">@roleWithPermissions.AvailablePermissions.Count izin</span>
+                        </div>
+                        
+                        <div class="border border-border-light dark:border-border-dark rounded-md max-h-80 overflow-y-auto">
+                            @if (!roleWithPermissions.AvailablePermissions.Any())
+                            {
+                                <div class="p-4 text-center text-sm text-subtext-light dark:text-subtext-dark">
+                                    Tüm izinler bu role atanmýþ
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var permission in roleWithPermissions.AvailablePermissions)
+                                {
+                                    <div class="flex items-center justify-between p-3 border-b border-border-light dark:border-border-dark last:border-b-0">
+                                        <div class="flex-1">
+                                            <div class="font-medium text-sm text-text-light dark:text-text-dark">@permission.Code</div>
+                                            @if (!string.IsNullOrEmpty(permission.Description))
+                                            {
+                                                <div class="text-xs text-subtext-light dark:text-subtext-dark">@permission.Description</div>
+                                            }
+                                        </div>
+                                        <button @onclick="() => AssignPermissionAsync(permission.Id)"
+                                                disabled="@processingPermissions.Contains(permission.Id)"
+                                                class="px-3 py-1 text-sm bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50">
+                                            @if (processingPermissions.Contains(permission.Id))
+                                            {
+                                                <span>...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Ata</span>
+                                            }
+                                        </button>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Assigned Permissions -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-medium text-text-light dark:text-text-dark">Atanmýþ Ýzinler</h4>
+                            <span class="text-sm text-subtext-light dark:text-subtext-dark">@roleWithPermissions.AssignedPermissions.Count izin</span>
+                        </div>
+                        
+                        <div class="border border-border-light dark:border-border-dark rounded-md max-h-80 overflow-y-auto">
+                            @if (!roleWithPermissions.AssignedPermissions.Any())
+                            {
+                                <div class="p-4 text-center text-sm text-subtext-light dark:text-subtext-dark">
+                                    Bu role hiç izin atanmamýþ
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var permission in roleWithPermissions.AssignedPermissions)
+                                {
+                                    <div class="flex items-center justify-between p-3 border-b border-border-light dark:border-border-dark last:border-b-0">
+                                        <div class="flex-1">
+                                            <div class="font-medium text-sm text-text-light dark:text-text-dark">@permission.Code</div>
+                                            @if (!string.IsNullOrEmpty(permission.Description))
+                                            {
+                                                <div class="text-xs text-subtext-light dark:text-subtext-dark">@permission.Description</div>
+                                            }
+                                        </div>
+                                        <button @onclick="() => RemovePermissionAsync(permission.Id)"
+                                                disabled="@processingPermissions.Contains(permission.Id)"
+                                                class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50">
+                                            @if (processingPermissions.Contains(permission.Id))
+                                            {
+                                                <span>...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Kaldýr</span>
+                                            }
+                                        </button>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (roleWithPermissions.AvailablePermissions.Any() || roleWithPermissions.AssignedPermissions.Any())
+                {
+                    <div class="mt-6 flex gap-3">
+                        @if (roleWithPermissions.AvailablePermissions.Any())
+                        {
+                            <button @onclick="AssignAllPermissionsAsync"
+                                    disabled="@bulkOperationInProgress"
+                                    class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-md text-sm transition-colors disabled:opacity-50">
+                                @if (bulkOperationInProgress)
+                                {
+                                    <span>Ýþleniyor...</span>
+                                }
+                                else
+                                {
+                                    <span>Tümünü Ata</span>
+                                }
+                            </button>
+                        }
+                        
+                        @if (roleWithPermissions.AssignedPermissions.Any())
+                        {
+                            <button @onclick="RemoveAllPermissionsAsync"
+                                    disabled="@bulkOperationInProgress"
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-sm transition-colors disabled:opacity-50">
+                                @if (bulkOperationInProgress)
+                                {
+                                    <span>Ýþleniyor...</span>
+                                }
+                                else
+                                {
+                                    <span>Tümünü Kaldýr</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+<MessageDialog Visible="@showMessageDialog"
+               Type="@messageType"
+               Title="@messageTitle"
+               Message="@messageContent"
+               OnOk="CloseMessageDialog" />
+
+@code {
+    [Inject] IRoleQueries RoleQueries { get; set; } = default!;
+    [Inject] IPermissionQueries PermissionQueries { get; set; } = default!;
+    [Inject] IRolePermissionCommands RolePermissionCommands { get; set; } = default!;
+
+    List<RoleDto> roles = new();
+    RoleWithPermissionsDto roleWithPermissions = new(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+    RoleDto? selectedRole;
+
+    bool loadingRoles = true;
+    bool loadingPermissions;
+    bool bulkOperationInProgress;
+    HashSet<Guid> processingPermissions = new();
+
+    // MessageDialog için deðiþkenler
+    bool showMessageDialog;
+    string? messageTitle;
+    string? messageContent;
+    MessageType messageType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    async Task LoadRolesAsync()
+    {
+        loadingRoles = true;
+        try
+        {
+            roles = (await RoleQueries.GetAllAsync()).ToList();
+        }
+        finally
+        {
+            loadingRoles = false;
+        }
+        StateHasChanged();
+    }
+
+    async Task SelectRoleAsync(Guid roleId)
+    {
+        selectedRole = roles.FirstOrDefault(r => r.Id == roleId);
+        if (selectedRole == null) return;
+
+        await LoadRolePermissionsAsync(roleId);
+    }
+
+    async Task LoadRolePermissionsAsync(Guid roleId)
+    {
+        loadingPermissions = true;
+        try
+        {
+            var result = await PermissionQueries.GetRoleWithPermissionsAsync(roleId);
+            roleWithPermissions = result ?? new RoleWithPermissionsDto(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler yüklenirken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            loadingPermissions = false;
+        }
+        StateHasChanged();
+    }
+
+    void BackToRoleSelection()
+    {
+        selectedRole = null;
+        roleWithPermissions = new RoleWithPermissionsDto(Guid.Empty, string.Empty, null, new List<PermissionDto>(), new List<PermissionDto>());
+    }
+
+    async Task AssignPermissionAsync(Guid permissionId)
+    {
+        if (selectedRole == null) return;
+
+        processingPermissions.Add(permissionId);
+        StateHasChanged();
+
+        try
+        {
+            await RolePermissionCommands.AssignPermissionToRoleAsync(selectedRole.Id, permissionId);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzin atanýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            processingPermissions.Remove(permissionId);
+            StateHasChanged();
+        }
+    }
+
+    async Task RemovePermissionAsync(Guid permissionId)
+    {
+        if (selectedRole == null) return;
+
+        processingPermissions.Add(permissionId);
+        StateHasChanged();
+
+        try
+        {
+            await RolePermissionCommands.RemovePermissionFromRoleAsync(selectedRole.Id, permissionId);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzin kaldýrýlýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            processingPermissions.Remove(permissionId);
+            StateHasChanged();
+        }
+    }
+
+    async Task AssignAllPermissionsAsync()
+    {
+        if (selectedRole == null || !roleWithPermissions.AvailablePermissions.Any()) return;
+
+        bulkOperationInProgress = true;
+        StateHasChanged();
+
+        try
+        {
+            var permissionIds = roleWithPermissions.AvailablePermissions.Select(p => p.Id);
+            await RolePermissionCommands.AssignMultiplePermissionsToRoleAsync(selectedRole.Id, permissionIds);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+            ShowMessage("Baþarýlý", "Tüm izinler baþarýyla atandý.", MessageType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler atanýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            bulkOperationInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task RemoveAllPermissionsAsync()
+    {
+        if (selectedRole == null || !roleWithPermissions.AssignedPermissions.Any()) return;
+
+        bulkOperationInProgress = true;
+        StateHasChanged();
+
+        try
+        {
+            var permissionIds = roleWithPermissions.AssignedPermissions.Select(p => p.Id);
+            await RolePermissionCommands.RemoveMultiplePermissionsFromRoleAsync(selectedRole.Id, permissionIds);
+            await LoadRolePermissionsAsync(selectedRole.Id);
+            ShowMessage("Baþarýlý", "Tüm izinler baþarýyla kaldýrýldý.", MessageType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Ýzinler kaldýrýlýrken hata oluþtu: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            bulkOperationInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    void ShowMessage(string title, string message, MessageType type)
+    {
+        messageTitle = title;
+        messageContent = message;
+        messageType = type;
+        showMessageDialog = true;
+        StateHasChanged();
+    }
+
+    void CloseMessageDialog()
+    {
+        showMessageDialog = false;
+        messageTitle = null;
+        messageContent = null;
+        StateHasChanged();
+    }
+}

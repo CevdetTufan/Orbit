@@ -27,9 +27,9 @@
 						  EnablePaging="false"
 						  Loading="loadingRoles">
 					<HeaderTemplate>
-						<th class="px-6 py-3">Rol AdÄ±</th>
-						<th class="px-6 py-3">AÃ§Ä±klama</th>
-						<th class="px-6 py-3 text-right">Ä°ÅŸlemler</th>
+						<th class="px-6 py-3">Rol Adý</th>
+						<th class="px-6 py-3">Açýklama</th>
+						<th class="px-6 py-3 text-right">Ýþlemler</th>
 					</HeaderTemplate>
 					<RowTemplate>
 						<td class="px-6 py-2">
@@ -58,12 +58,12 @@
 							@if (editRole?.Id == context.Id)
 							{
 								<button @onclick="() => SaveEditAsync(context.Id)" class="rounded-md bg-primary  px-3 py-1">Kaydet</button>
-								<button @onclick="CancelEditRole" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">Ä°ptal</button>
+								<button @onclick="CancelEditRole" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">Ýptal</button>
 							}
 							else
 							{
-								<button @onclick="() => BeginEditRole(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">DÃ¼zenle</button>
-								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!context.CanDelete)" title="@(!context.CanDelete ? "Bu rol, kullanÄ±cÄ± atanmÄ±ÅŸ olduÄŸu iÃ§in silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
+								<button @onclick="() => BeginEditRole(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
+								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!context.CanDelete)" title="@(!context.CanDelete ? "Bu rol, kullanýcý atanmýþ olduðu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
 							}
 						</td>
 					</RowTemplate>
@@ -72,10 +72,10 @@
 		</div>
 
 		<ConfirmDialog Visible="@showDeleteModal"
-					   Title="RolÃ¼ sil"
-					   Message='@($"\"{deleteTargetName}\" rolÃ¼nÃ¼ silmek istediÄŸinize emin misiniz?")'
+					   Title="Rolü sil"
+					   Message='@($"\"{deleteTargetName}\" rolünü silmek istediðinize emin misiniz?")'
 					   ConfirmText="Sil"
-					   CancelText="Ä°ptal"
+					   CancelText="Ýptal"
 					   OnConfirm="ConfirmDeleteAsync"
 					   OnCancel="CloseDeleteModal" />
 
@@ -92,29 +92,29 @@
 				<div class="fixed inset-0 bg-black/40" style="position:fixed;inset:0;background-color:rgba(0,0,0,0.4);z-index:2000;" @onclick="CloseAddRoleModal"></div>
 				<div class="w-full max-w-md mx-auto rounded-lg bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-xl" style="position:relative;z-index:2001;max-height:90vh;overflow-y:auto;">
 					<div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
-						<h2 class="text-lg font-semibold text-text-light dark:text-text-dark">Yeni Rol OluÅŸtur</h2>
-						<p class="text-sm text-subtext-light dark:text-subtext-dark mt-1">Sisteme yeni bir rol eklemek iÃ§in aÅŸaÄŸÄ±daki bilgileri doldurun.</p>
+						<h2 class="text-lg font-semibold text-text-light dark:text-text-dark">Yeni Rol Oluþtur</h2>
+						<p class="text-sm text-subtext-light dark:text-subtext-dark mt-1">Sisteme yeni bir rol eklemek için aþaðýdaki bilgileri doldurun.</p>
 					</div>
 					<div class="p-6 space-y-4">
 						<div>
 							<label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
-								Rol AdÄ± <span class="text-red-500">*</span>
+								Rol Adý <span class="text-red-500">*</span>
 							</label>
 							<input @bind="modalRoleName"
-								   placeholder="Ã–rn: Admin, Editor, Viewer"
+								   placeholder="Örn: Admin, Editor, Viewer"
 								   class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary/50" />
 							@if (string.IsNullOrWhiteSpace(modalRoleName) && showModalValidation)
 							{
-								<p class="mt-1 text-sm text-red-500">Rol adÄ± zorunludur.</p>
+								<p class="mt-1 text-sm text-red-500">Rol adý zorunludur.</p>
 							}
 						</div>
 						<div>
 							<label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
-								AÃ§Ä±klama
+								Açýklama
 							</label>
 							<textarea @bind="modalRoleDescription"
 									  rows="3"
-									  placeholder="Bu rolÃ¼n yetkilerini ve sorumluluklarÄ±nÄ± kÄ±saca aÃ§Ä±klayÄ±n..."
+									  placeholder="Bu rolün yetkilerini ve sorumluluklarýný kýsaca açýklayýn..."
 									  class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 text-text-light dark:text-text-dark placeholder-subtext-light dark:placeholder-subtext-dark transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary/50 resize-none"></textarea>
 						</div>
 						@if (!string.IsNullOrWhiteSpace(modalFeedback))
@@ -126,7 +126,7 @@
 						<button type="button"
 								@onclick="CloseAddRoleModal"
 								class="px-4 py-2 rounded-md border border-border-light dark:border-border-dark text-text-light dark:text-text-dark hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
-							Ä°ptal
+							Ýptal
 						</button>
 						<button type="button"
 								@onclick="CreateRoleFromModalAsync"
@@ -138,7 +138,7 @@
 									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
 									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 								</svg>
-								<span>OluÅŸturuluyor...</span>
+								<span>Oluþturuluyor...</span>
 							}
 							else
 							{
@@ -152,7 +152,9 @@
 	}
 	else if (activeTab == "permissions")
 	{
-		<div class="text-sm text-subtext-light dark:text-subtext-dark bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">Permission management coming soon.</div>
+		<div class="bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6 shadow-sm">
+			<RolePermissionManagement />
+		</div>
 	}
 	else
 	{
@@ -177,7 +179,7 @@
 	Guid? deleteTargetId;
 	string? deleteTargetName;
 
-	// Modal iÃ§in deÄŸiÅŸkenler
+	// Modal için deðiþkenler
 	bool showAddRoleModal;
 	string? modalRoleName;
 	string? modalRoleDescription;
@@ -185,7 +187,7 @@
 	bool isCreatingFromModal;
 	string? modalFeedback;
 
-	// MessageDialog iÃ§in deÄŸiÅŸkenler
+	// MessageDialog için deðiþkenler
 	bool showMessageDialog;
 	string? messageTitle;
 	string? messageContent;
@@ -260,7 +262,7 @@
 		}
 		catch (Exception ex)
 		{
-			modalFeedback = $"Rol oluÅŸturulamadÄ±: {ex.Message}";
+			modalFeedback = $"Rol oluþturulamadý: {ex.Message}";
 		}
 		finally
 		{
@@ -292,7 +294,7 @@
 		}
 		catch (Exception ex)
 		{
-			ShowMessage("Rol gÃ¼ncellenemedi.", $"LÃ¼tfen bilgileri kontrol edin ve tekrar deneyin. <br>{ex.Message}", MessageType.Error);
+			ShowMessage("Rol güncellenemedi.", $"Lütfen bilgileri kontrol edin ve tekrar deneyin. <br>{ex.Message}", MessageType.Error);
 		}
 		finally
 		{
@@ -328,7 +330,7 @@
 		}
 	}
 
-	// MessageDialog iÃ§in metodlar
+	// MessageDialog için metodlar
 	void ShowMessage(string title, string message, MessageType type)
 	{
 		messageTitle = title;
