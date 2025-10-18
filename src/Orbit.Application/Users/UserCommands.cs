@@ -26,23 +26,33 @@ internal sealed class UserCommands : IUserCommands
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUserCredentialStore _credentialStore;
+    private readonly IUserUniquenessChecker _uniquenessChecker;
 
     public UserCommands(
         IRepository<User, Guid> userRepository,
         IReadRepository<Role, Guid> roleRepository,
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
-        IUserCredentialStore credentialStore)
+        IUserCredentialStore credentialStore,
+        IUserUniquenessChecker uniquenessChecker)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
         _credentialStore = credentialStore;
+        _uniquenessChecker = uniquenessChecker;
     }
 
     public async Task<Guid> CreateAsync(string username, string email, CancellationToken cancellationToken = default)
     {
+        // Check username uniqueness
+        var isUsernameTaken = await _uniquenessChecker.IsUsernameTakenAsync(username, null, cancellationToken);
+        if (isUsernameTaken)
+        {
+            throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
+        }
+
         var user = User.Create(username, email);
         await _userRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -61,6 +71,13 @@ internal sealed class UserCommands : IUserCommands
     {
         try
         {
+            // Check username uniqueness
+            var isUsernameTaken = await _uniquenessChecker.IsUsernameTakenAsync(username, id, cancellationToken);
+            if (isUsernameTaken)
+            {
+                throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
+            }
+
             var user = await _userRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
 
@@ -73,6 +90,13 @@ internal sealed class UserCommands : IUserCommands
         {
             await HandleConcurrencyAndRetryAsync(async () =>
             {
+                // Check username uniqueness again in retry
+                var isUsernameTaken = await _uniquenessChecker.IsUsernameTakenAsync(username, id, cancellationToken);
+                if (isUsernameTaken)
+                {
+                    throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
+                }
+
                 var freshUser = await _userRepository.GetByIdAsync(id, cancellationToken)
                     ?? throw new InvalidOperationException("User not found");
                 freshUser.UpdateUsername(Username.Create(username));

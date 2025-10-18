@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Orbit.Application.Auth;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
+using Orbit.Domain.Users;
+using Orbit.Infrastructure.Domain.Users;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Infrastructure.Persistence.Entities;
 using Orbit.Infrastructure.Persistence.Repositories;
@@ -34,6 +36,7 @@ public static class DependencyInjection
 
         // Domain services (DDD approach)
         services.AddScoped<RolePermissionDomainService>();
+        services.AddScoped<IUserUniquenessChecker, UserUniquenessChecker>();
 
         // Security services
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
