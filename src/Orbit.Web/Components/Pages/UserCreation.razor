@@ -66,14 +66,14 @@
                 </button>
                 @if (context.IsActive)
                 {
-                    <button @onclick="() => DeactivateUserAsync(context.Id)"
+                    <button @onclick="() => OpenDeactivateConfirm(context.Id, context.Username)"
                             class="px-3 py-1 rounded-md border border-warning text-warning hover:bg-warning/10 text-sm">
                         Pasifleþtir
                     </button>
                 }
                 else
                 {
-                    <button @onclick="() => ActivateUserAsync(context.Id)"
+                    <button @onclick="() => OpenActivateConfirm(context.Id, context.Username)"
                             class="px-3 py-1 rounded-md border border-success text-success hover:bg-success/10 text-sm">
                         Aktifleþtir
                     </button>
@@ -236,6 +236,22 @@
     </div>
 }
 
+<ConfirmDialog Visible="@showActivateConfirm"
+               Title="Kullanýcýyý Aktifleþtir"
+               Message='@($"\"{confirmTargetUsername}\" kullanýcýsýný aktifleþtirmek istediðinize emin misiniz?")'
+               ConfirmText="Evet, Aktifleþtir"
+               CancelText="Ýptal"
+               OnConfirm="ConfirmActivateAsync"
+               OnCancel="CloseActivateConfirm" />
+
+<ConfirmDialog Visible="@showDeactivateConfirm"
+               Title="Kullanýcýyý Pasifleþtir"
+               Message='@($"\"{confirmTargetUsername}\" kullanýcýsýný pasifleþtirmek istediðinize emin misiniz? Kullanýcý sisteme giriþ yapamayacaktýr.")'
+               ConfirmText="Evet, Pasifleþtir"
+               CancelText="Ýptal"
+               OnConfirm="ConfirmDeactivateAsync"
+               OnCancel="CloseDeactivateConfirm" />
+
 <MessageDialog Visible="@showMessageDialog"
                Type="@messageType"
                Title="@messageTitle"
@@ -267,6 +283,12 @@
     string? messageTitle;
     string? messageContent;
     MessageType messageType;
+    
+    // Activate/Deactivate confirm states
+    bool showActivateConfirm = false;
+    bool showDeactivateConfirm = false;
+    Guid? confirmTargetUserId = null;
+    string? confirmTargetUsername = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -384,11 +406,27 @@
         }
     }
 
-    async Task ActivateUserAsync(Guid userId)
+    void OpenActivateConfirm(Guid userId, string username)
     {
+        confirmTargetUserId = userId;
+        confirmTargetUsername = username;
+        showActivateConfirm = true;
+    }
+
+    void CloseActivateConfirm()
+    {
+        showActivateConfirm = false;
+        confirmTargetUserId = null;
+        confirmTargetUsername = null;
+    }
+
+    async Task ConfirmActivateAsync()
+    {
+        if (confirmTargetUserId == null) return;
+        
         try
         {
-            await UserCommands.ActivateAsync(userId);
+            await UserCommands.ActivateAsync(confirmTargetUserId.Value);
             ShowMessage("Baþarýlý", "Kullanýcý aktifleþtirildi.", MessageType.Success);
             await LoadPageAsync();
         }
@@ -396,19 +434,43 @@
         {
             ShowMessage("Hata", $"Kullanýcý aktifleþtirilemedi: {ex.Message}", MessageType.Error);
         }
+        finally
+        {
+            CloseActivateConfirm();
+        }
     }
 
-    async Task DeactivateUserAsync(Guid userId)
+    void OpenDeactivateConfirm(Guid userId, string username)
     {
+        confirmTargetUserId = userId;
+        confirmTargetUsername = username;
+        showDeactivateConfirm = true;
+    }
+
+    void CloseDeactivateConfirm()
+    {
+        showDeactivateConfirm = false;
+        confirmTargetUserId = null;
+        confirmTargetUsername = null;
+    }
+
+    async Task ConfirmDeactivateAsync()
+    {
+        if (confirmTargetUserId == null) return;
+        
         try
         {
-            await UserCommands.DeactivateAsync(userId);
+            await UserCommands.DeactivateAsync(confirmTargetUserId.Value);
             ShowMessage("Baþarýlý", "Kullanýcý pasifleþtirildi.", MessageType.Success);
             await LoadPageAsync();
         }
         catch (Exception ex)
         {
             ShowMessage("Hata", $"Kullanýcý pasifleþtirilemedi: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            CloseDeactivateConfirm();
         }
     }
 
