@@ -37,9 +37,6 @@ internal sealed class PermissionQueries : IPermissionQueries
         
         if (role == null)
             return null;
-
-        // Get assigned permissions for this role
-        var assignedPermissions = new List<PermissionDto>();
         
         // Get all permissions to show available ones
         var allPermissions = await GetAllAsync(cancellationToken);
