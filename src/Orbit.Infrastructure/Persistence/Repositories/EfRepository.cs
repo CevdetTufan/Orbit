@@ -82,6 +82,14 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 		return await query.FirstOrDefaultAsync(cancellationToken);
 	}
 
+	public async Task<TResult?> FirstOrDefaultAsync<TResult>(
+		BaseSpecification<TAggregate, TResult> specification,
+		CancellationToken cancellationToken = default) where TResult : class
+	{
+		var query = SpecificationEvaluator.GetQuery<TAggregate, TResult>(_set.AsQueryable(), specification);
+		return await query.FirstOrDefaultAsync(cancellationToken);
+	}
+
 	// IWriteRepository
 	public Task AddAsync(TAggregate entity, CancellationToken cancellationToken = default)
 		=> _set.AddAsync(entity, cancellationToken).AsTask();
