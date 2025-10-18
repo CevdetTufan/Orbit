@@ -25,6 +25,13 @@ public sealed class Role : Entity<Guid>, IAggregateRoot
     public void Rename(string name) => Name = ValidateName(name);
     public void UpdateDescription(string? description) => Description = description?.Trim();
 
+    /// <summary>
+    /// Checks if the role has a specific permission.
+    /// Used by domain services for business rule validation.
+    /// </summary>
+    public bool HasPermission(Guid permissionId)
+        => _permissions.Any(x => x.PermissionId == permissionId);
+
     public void Grant(Permission permission)
     {
         if (_permissions.Any(x => x.PermissionId == permission.Id))

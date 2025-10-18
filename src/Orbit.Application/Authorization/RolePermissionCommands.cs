@@ -15,7 +15,6 @@ public interface IRolePermissionCommands
 internal sealed class RolePermissionCommands : IRolePermissionCommands
 {
     private readonly IReadRepository<Role, Guid> _roleReadRepository;
-    private readonly IWriteRepository<Role, Guid> _roleWriteRepository;
     private readonly IReadRepository<Permission, Guid> _permissionRepository;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -26,7 +25,6 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
         IUnitOfWork unitOfWork)
     {
         _roleReadRepository = roleReadRepository;
-        _roleWriteRepository = roleWriteRepository;
         _permissionRepository = permissionRepository;
         _unitOfWork = unitOfWork;
     }

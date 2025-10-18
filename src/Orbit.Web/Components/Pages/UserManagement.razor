@@ -1,6 +1,7 @@
 @page "/kullanici-yonetimi"
 @using Orbit.Application.Authorization
 @using Orbit.Application.Authorization.Models
+@using Orbit.Domain.Authorization
 @using static Orbit.Web.Components.Controls.MessageDialog
 
 <PageTitle>User Management</PageTitle>
@@ -322,11 +323,26 @@
 		if (deleteTargetId is null)
 			return;
 
-		var deleted = await RoleCommands.DeleteIfNoUsersAsync(deleteTargetId.Value);
-		if (deleted)
+		try
+		{
+			var deleted = await RoleCommands.DeleteIfNoUsersAsync(deleteTargetId.Value);
+			if (deleted)
+			{
+				CloseDeleteModal();
+				await LoadRolesAsync();
+			}
+		}
+		catch (AuthorizationDomainException ex)
+		{
+			ShowMessage("Rol silinemedi.", ex.Message, MessageType.Warning);
+		}
+		catch (Exception ex)
+		{
+			ShowMessage("Rol silinemedi.", $"Lütfen bilgileri kontrol edin ve tekrar deneyin. <br>{ex.Message}", MessageType.Error);
+		}
+		finally
 		{
 			CloseDeleteModal();
-			await LoadRolesAsync();
 		}
 	}
 

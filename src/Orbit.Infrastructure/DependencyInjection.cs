@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Orbit.Application.Auth;
+using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Infrastructure.Persistence.Entities;
@@ -22,9 +23,17 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Generic repositories
         services.AddScoped(typeof(IReadRepository<,>), typeof(EfRepository<,>));
         services.AddScoped(typeof(IWriteRepository<,>), typeof(EfRepository<,>));
         services.AddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
+
+        // Domain-specific repositories (DDD approach)
+        services.AddScoped<IRoleRepository, EfRoleRepository>();
+        services.AddScoped<IPermissionRepository, EfPermissionRepository>();
+
+        // Domain services (DDD approach)
+        services.AddScoped<RolePermissionDomainService>();
 
         // Security services
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

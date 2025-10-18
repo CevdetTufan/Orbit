@@ -5,7 +5,7 @@ using Orbit.Infrastructure.Persistence.Specifications;
 
 namespace Orbit.Infrastructure.Persistence.Repositories;
 
-internal sealed class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
+internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 	where TAggregate : Entity<TId>, IAggregateRoot
 {
 	private readonly AppDbContext _dbContext;
