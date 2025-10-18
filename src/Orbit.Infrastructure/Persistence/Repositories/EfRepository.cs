@@ -5,7 +5,7 @@ using Orbit.Infrastructure.Persistence.Specifications;
 
 namespace Orbit.Infrastructure.Persistence.Repositories;
 
-internal sealed class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
+internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 	where TAggregate : Entity<TId>, IAggregateRoot
 {
 	private readonly AppDbContext _dbContext;
@@ -20,16 +20,16 @@ internal sealed class EfRepository<TAggregate, TId> : IRepository<TAggregate, TI
 	// IReadRepository
 	public async Task<TAggregate?> GetByIdAsync(TId id, CancellationToken cancellationToken = default)
 	{
-		// Note: FindAsync returns a tracked entity if found in the context.
-		// For read-heavy scenarios requiring no tracking, prefer query patterns.
-		var entity = await _set.FindAsync(new object?[] { id }, cancellationToken);
-		return entity;
+		// FindAsync returns a tracked entity - Update operations için gerekli
+		// Write operations için bu method kullanýlacak
+		return await _set.FindAsync(new object?[] { id }, cancellationToken);
 	}
 
 	public async Task<IReadOnlyList<TAggregate>> ListAsync(
 		Expression<Func<TAggregate, bool>>? predicate = null,
 		CancellationToken cancellationToken = default)
 	{
+		// ListAsync always uses AsNoTracking for read-only operations
 		IQueryable<TAggregate> query = _set.AsNoTracking();
 		if (predicate is not null)
 		{

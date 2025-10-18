@@ -12,54 +12,69 @@ public interface IRoleCommands
 
 internal sealed class RoleCommands : IRoleCommands
 {
-	private readonly IWriteRepository<Role, Guid> _rolesWrite;
-	private readonly IReadRepository<Role, Guid> _rolesRead;
+	private readonly IRoleRepository _roleRepository;
 	private readonly IReadRepository<Domain.Users.User, Guid> _usersRead;
+	private readonly RolePermissionDomainService _domainService;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public RoleCommands(
-		IWriteRepository<Role, Guid> rolesWrite,
-		IReadRepository<Role, Guid> rolesRead,
+		IRoleRepository roleRepository,
 		IReadRepository<Domain.Users.User, Guid> usersRead,
+		RolePermissionDomainService domainService,
 		IUnitOfWork unitOfWork)
 	{
-		_rolesWrite = rolesWrite;
-		_rolesRead = rolesRead;
+		_roleRepository = roleRepository;
 		_usersRead = usersRead;
+		_domainService = domainService;
 		_unitOfWork = unitOfWork;
 	}
 
 	public async Task<Guid> CreateAsync(string name, string? description, CancellationToken cancellationToken = default)
 	{
 		var role = Role.Create(name, description);
-		await _rolesWrite.AddAsync(role, cancellationToken);
+		await _roleRepository.AddAsync(role, cancellationToken);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
 		return role.Id;
 	}
 
 	public async Task UpdateAsync(Guid id, string name, string? description, CancellationToken cancellationToken = default)
 	{
-		var role = await _rolesRead.GetByIdAsync(id, cancellationToken);
+		var role = await _roleRepository.GetByIdAsync(id, cancellationToken);
 		if (role is null)
 			throw new InvalidOperationException("Role not found");
 
 		role.Rename(name);
 		role.UpdateDescription(description);
-		_rolesWrite.Update(role);
+		_roleRepository.Update(role);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> DeleteIfNoUsersAsync(Guid id, CancellationToken cancellationToken = default)
 	{
+		// 1. Business Rule: Check if any users have this role assigned
 		var hasUsers = await _usersRead.AnyAsync(u => u.Roles.Any(ur => ur.RoleId == id), cancellationToken);
 		if (hasUsers)
-			return false;
+		{
+			throw new AuthorizationDomainException(
+				"Role cannot be deleted because it is assigned to one or more users. " +
+				"Please unassign the role from all users before deleting.");
+		}
 
-		var role = await _rolesRead.GetByIdAsync(id, cancellationToken);
+		// 2. Get role with permissions to validate business rules
+		var role = await _roleRepository.GetWithPermissionsAsync(id, cancellationToken);
 		if (role is null)
-			return true; // already gone
-		_rolesWrite.Remove(role);
+		{
+			return true; // Already deleted (idempotent)
+		}
+
+		// 3. Business Rule: Check if role has any permissions assigned
+		// This throws AuthorizationDomainException with clear message if validation fails
+		_domainService.EnsureRoleCanBeDeleted(role);
+
+		// 4. Role passed all validations, safe to delete
+		_roleRepository.Remove(role);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
+		
 		return true;
 	}
 }

@@ -7,12 +7,10 @@ public class RoleWithCanDeleteSpec : BaseSpecification<Role, RoleDto>
 {
 	public RoleWithCanDeleteSpec()
 	{
-		// Sadece gerekli kolonları seçiyoruz (SELECT * yerine projection)
 		Selector = r => new RoleDto(
 			r.Id,
 			r.Name,
 			r.Description,
-			// eğer hiçbir user bu rolü kullanmıyorsa true
 			!r.Permissions.Any()
 		);
 
