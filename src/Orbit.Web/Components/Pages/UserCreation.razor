@@ -1,0 +1,623 @@
+@using Orbit.Application.Users
+@using Orbit.Application.Users.Models
+@using Orbit.Application.Authorization
+@using Orbit.Application.Authorization.Models
+@using static Orbit.Web.Components.Controls.MessageDialog
+
+<div class="space-y-6">
+    <DataGrid TItem="UserListItemDto"
+              Items="users"
+              Title="Kullanýcýlar"
+              TotalCount="totalCount"
+              PageIndex="pageIndex"
+              PageSize="pageSize"
+              EnableAdd="true"
+              AddButtonText="Yeni Kullanýcý"
+              OnAdd="OpenCreateModal"
+              EnablePaging="true"
+              OnPageChange="HandlePageChange"
+              Loading="loading">
+        <HeaderTemplate>
+            <th class="px-6 py-3">Kullanýcý Adý</th>
+            <th class="px-6 py-3">E-posta</th>
+            <th class="px-6 py-3">Roller</th>
+            <th class="px-6 py-3">Durum</th>
+            <th class="px-6 py-3 text-right">Ýþlemler</th>
+        </HeaderTemplate>
+        <RowTemplate>
+            <td class="px-6 py-2">
+                <span class="font-medium">@context.Username</span>
+            </td>
+            <td class="px-6 py-2 text-sm">
+                @context.Email
+            </td>
+            <td class="px-6 py-2">
+                <div class="flex flex-wrap gap-1">
+                    @foreach (var role in context.Roles)
+                    {
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                            @role
+                        </span>
+                    }
+                </div>
+            </td>
+            <td class="px-6 py-2">
+                @if (context.IsActive)
+                {
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                        Aktif
+                    </span>
+                }
+                else
+                {
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                        Pasif
+                    </span>
+                }
+            </td>
+            <td class="px-6 py-2 text-right space-x-2 whitespace-nowrap">
+                <button @onclick="() => OpenEditModal(context.Id)"
+                        class="px-3 py-1 rounded-md border border-border-light dark:border-border-dark hover:bg-primary/10 text-sm">
+                    Düzenle
+                </button>
+                <button @onclick="() => OpenRoleModal(context.Id)"
+                        class="px-3 py-1 rounded-md border border-border-light dark:border-border-dark hover:bg-primary/10 text-sm">
+                    Roller
+                </button>
+                @if (context.IsActive)
+                {
+                    <button @onclick="() => OpenDeactivateConfirm(context.Id, context.Username)"
+                            class="px-3 py-1 rounded-md border border-warning text-warning hover:bg-warning/10 text-sm">
+                        Pasifleþtir
+                    </button>
+                }
+                else
+                {
+                    <button @onclick="() => OpenActivateConfirm(context.Id, context.Username)"
+                            class="px-3 py-1 rounded-md border border-success text-success hover:bg-success/10 text-sm">
+                        Aktifleþtir
+                    </button>
+                }
+            </td>
+        </RowTemplate>
+    </DataGrid>
+</div>
+
+@if (showUserModal)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="position:fixed;inset:0;z-index:2000;">
+        <div class="fixed inset-0 bg-black/40" @onclick="CloseUserModal"></div>
+        <div class="w-full max-w-md mx-auto rounded-lg bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-xl" style="position:relative;z-index:2001;">
+            <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                <h2 class="text-lg font-semibold">
+                    @(editingUserId == null ? "Yeni Kullanýcý Oluþtur" : "Kullanýcý Düzenle")
+                </h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        Kullanýcý Adý <span class="text-red-500">*</span>
+                    </label>
+                    <input @bind="userForm.Username"
+                           placeholder="Kullanýcý adý"
+                           class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        E-posta <span class="text-red-500">*</span>
+                    </label>
+                    <input @bind="userForm.Email"
+                           type="email"
+                           placeholder="E-posta adresi"
+                           class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                @if (editingUserId == null)
+                {
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Þifre <span class="text-red-500">*</span>
+                        </label>
+                        <input @bind="userForm.Password"
+                               type="password"
+                               placeholder="Þifre"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Þifre Tekrar <span class="text-red-500">*</span>
+                        </label>
+                        <input @bind="userForm.PasswordConfirm"
+                               type="password"
+                               placeholder="Þifre tekrar"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Yeni Þifre (Boþ býrakýlýrsa deðiþtirilmez)
+                        </label>
+                        <input @bind="userForm.Password"
+                               type="password"
+                               placeholder="Yeni þifre (opsiyonel)"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(userForm.Password))
+                    {
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Þifre Tekrar <span class="text-red-500">*</span>
+                            </label>
+                            <input @bind="userForm.PasswordConfirm"
+                                   type="password"
+                                   placeholder="Þifre tekrar"
+                                   class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                        </div>
+                    }
+                }
+                @if (!string.IsNullOrWhiteSpace(userFormFeedback)){<div class="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><p class="text-sm text-red-600 dark:text-red-400">@userFormFeedback</p></div>}
+            </div>
+            <div class="px-6 py-4 flex justify-end gap-3 border-t border-border-light dark:border-border-dark">
+                <button type="button"
+                        @onclick="CloseUserModal"
+                        class="px-4 py-2 rounded-md border border-border-light dark:border-border-dark hover:bg-hover-light dark:hover:bg-hover-dark">
+                    Ýptal
+                </button>
+                <button type="button"
+                        @onclick="SaveUserAsync"
+                        disabled="@userFormSaving"
+                        class="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50">
+                    @if (userFormSaving)
+                    {
+                        <span>Kaydediliyor...</span>
+                    }
+                    else
+                    {
+                        <span>@(editingUserId == null ? "Oluþtur" : "Güncelle")</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showRoleModal && userDetail != null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="position:fixed;inset:0;z-index:2000;">
+        <div class="fixed inset-0 bg-black/40" @onclick="CloseRoleModal"></div>
+        <div class="w-full max-w-2xl mx-auto rounded-lg bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-xl" style="position:relative;z-index:2001;">
+            <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
+                <h2 class="text-lg font-semibold">Rol Yönetimi</h2>
+                <p class="text-sm text-subtext-light dark:text-subtext-dark mt-1">Kullanýcýya atanmýþ rolleri yönetin</p>
+            </div>
+            <div class="p-6">
+                @if (loadingRoles)
+                {
+                    <div class="flex justify-center py-8">
+                        <div class="h-8 w-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin"></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="text-sm font-medium mb-3">Atanmýþ Roller</h3>
+                            <div class="space-y-2 border border-border-light dark:border-border-dark rounded-lg p-3 min-h-[200px]">
+                                @if (userDetail.Roles.Any())
+                                {
+                                    @foreach (var role in userDetail.Roles)
+                                    {
+                                        <div class="flex items-center justify-between p-2 rounded bg-background-light dark:bg-background-dark">
+                                            <span class="text-sm">@role.Name</span>
+                                            <button @onclick="() => RemoveRoleAsync(role.Id)"
+                                                    class="text-danger hover:bg-danger/10 p-1 rounded">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-sm text-subtext-light dark:text-subtext-dark text-center py-8">Henüz rol atanmamýþ</p>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium mb-3">Mevcut Roller</h3>
+                            <div class="space-y-2 border border-border-light dark:border-border-dark rounded-lg p-3 min-h-[200px]">
+                                @{
+                                    var availableRoles = allRoles.Where(r => !userDetail.Roles.Any(ur => ur.Id == r.Id)).ToList();
+                                }
+                                @if (availableRoles.Any())
+                                {
+                                    @foreach (var role in availableRoles)
+                                    {
+                                        <div class="flex items-center justify-between p-2 rounded bg-background-light dark:bg-background-dark">
+                                            <span class="text-sm">@role.Name</span>
+                                            <button @onclick="() => AssignRoleAsync(role.Id)"
+                                                    class="text-success hover:bg-success/10 p-1 rounded">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-sm text-subtext-light dark:text-subtext-dark text-center py-8">Tüm roller atanmýþ</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="px-6 py-4 flex justify-end border-t border-border-light dark:border-border-dark">
+                <button type="button"
+                        @onclick="CloseRoleModal"
+                        class="px-4 py-2 rounded-md bg-primary hover:bg-primary/90">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmDialog Visible="@showActivateConfirm"
+               Title="Kullanýcýyý Aktifleþtir"
+               Message='@($"\"{confirmTargetUsername}\" kullanýcýsýný aktifleþtirmek istediðinize emin misiniz?")'
+               ConfirmText="Evet, Aktifleþtir"
+               CancelText="Ýptal"
+               OnConfirm="ConfirmActivateAsync"
+               OnCancel="CloseActivateConfirm" />
+
+<ConfirmDialog Visible="@showDeactivateConfirm"
+               Title="Kullanýcýyý Pasifleþtir"
+               Message='@($"\"{confirmTargetUsername}\" kullanýcýsýný pasifleþtirmek istediðinize emin misiniz? Kullanýcý sisteme giriþ yapamayacaktýr.")'
+               ConfirmText="Evet, Pasifleþtir"
+               CancelText="Ýptal"
+               OnConfirm="ConfirmDeactivateAsync"
+               OnCancel="CloseDeactivateConfirm" />
+
+<MessageDialog Visible="@showMessageDialog"
+               Type="@messageType"
+               Title="@messageTitle"
+               Message="@messageContent"
+               OnOk="CloseMessageDialog" />
+
+@code {
+    [Inject] IUserQueries UserQueries { get; set; } = default!;
+    [Inject] IUserCommands UserCommands { get; set; } = default!;
+    [Inject] IRoleQueries RoleQueries { get; set; } = default!;
+
+    List<UserListItemDto> users = new();
+    List<RoleDto> allRoles = new();
+    UserDetailDto? userDetail;
+    
+    int pageIndex = 0;
+    int pageSize = 10;
+    int totalCount = 0;
+    bool loading = false;
+    bool showUserModal = false;
+    Guid? editingUserId = null;
+    UserFormModel userForm = new();
+    bool userFormSaving = false;
+    string? userFormFeedback;
+    bool showRoleModal = false;
+    Guid? managingRolesForUserId = null;
+    bool loadingRoles = false;
+    bool showMessageDialog;
+    string? messageTitle;
+    string? messageContent;
+    MessageType messageType;
+    
+    // Activate/Deactivate confirm states
+    bool showActivateConfirm = false;
+    bool showDeactivateConfirm = false;
+    Guid? confirmTargetUserId = null;
+    string? confirmTargetUsername = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllRolesAsync();
+        await LoadPageAsync();
+    }
+
+    async Task LoadPageAsync()
+    {
+        loading = true;
+        try
+        {
+            var result = await UserQueries.GetPagedAsync(pageIndex, pageSize);
+            users = result.Items.ToList();
+            totalCount = result.TotalCount;
+        }
+        catch(Exception ex)
+        {
+            ShowMessage("Hata", $"Kullanýcýlar yüklenemedi: {ex.Message}", MessageType.Error);
+		}
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    async Task LoadAllRolesAsync()
+    {
+        allRoles = (await RoleQueries.GetAllAsync()).ToList();
+    }
+
+    async Task HandlePageChange((int pageIndex, int pageSize) args)
+    {
+        pageIndex = args.pageIndex;
+        pageSize = args.pageSize;
+        await LoadPageAsync();
+    }
+
+    void OpenCreateModal()
+    {
+        editingUserId = null;
+        userForm = new UserFormModel();
+        userFormFeedback = null;
+        showUserModal = true;
+    }
+
+    void OpenEditModal(Guid userId)
+    {
+        editingUserId = userId;
+        var user = users.FirstOrDefault(u => u.Id == userId);
+        if (user != null)
+        {
+            userForm = new UserFormModel 
+            { 
+                Username = user.Username,
+                Email = user.Email 
+            };
+        }
+        userFormFeedback = null;
+        showUserModal = true;
+    }
+
+    void CloseUserModal()
+    {
+        showUserModal = false;
+        editingUserId = null;
+        userForm = new();
+        userFormFeedback = null;
+    }
+
+    async Task SaveUserAsync()
+    {
+        userFormFeedback = null;
+        
+        // Validation
+        if (string.IsNullOrWhiteSpace(userForm.Username))
+        {
+            userFormFeedback = "Kullanýcý adý gerekli";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(userForm.Email))
+        {
+            userFormFeedback = "E-posta adresi gerekli";
+            return;
+        }
+        
+        // Create mode: Password required
+        if (editingUserId == null)
+        {
+            if (string.IsNullOrWhiteSpace(userForm.Password))
+            {
+                userFormFeedback = "Þifre gerekli";
+                return;
+            }
+            
+            if (userForm.Password != userForm.PasswordConfirm)
+            {
+                userFormFeedback = "Þifreler eþleþmiyor";
+                return;
+            }
+        }
+        else
+        {
+            // Edit mode: Password optional but must match if provided
+            if (!string.IsNullOrWhiteSpace(userForm.Password))
+            {
+                if (userForm.Password != userForm.PasswordConfirm)
+                {
+                    userFormFeedback = "Þifreler eþleþmiyor";
+                    return;
+                }
+            }
+        }
+
+        userFormSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            if (editingUserId == null)
+            {
+                // Create new user
+                await UserCommands.CreateWithPasswordAsync(userForm.Username!, userForm.Email!, userForm.Password!);
+                ShowMessage("Baþarýlý", "Kullanýcý baþarýyla oluþturuldu.", MessageType.Success);
+            }
+            else
+            {
+                // Update existing user
+                await UserCommands.UpdateAsync(editingUserId.Value, userForm.Username!, userForm.Email!);
+                
+                // Update password if provided
+                if (!string.IsNullOrWhiteSpace(userForm.Password))
+                {
+                    await UserCommands.UpdatePasswordAsync(editingUserId.Value, userForm.Password!);
+                }
+                
+                ShowMessage("Baþarýlý", "Kullanýcý baþarýyla güncellendi.", MessageType.Success);
+            }
+            CloseUserModal();
+            await LoadPageAsync();
+        }
+        catch (Exception ex)
+        {
+            userFormFeedback = $"Hata: {ex.Message}";
+        }
+        finally
+        {
+            userFormSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    void OpenActivateConfirm(Guid userId, string username)
+    {
+        confirmTargetUserId = userId;
+        confirmTargetUsername = username;
+        showActivateConfirm = true;
+    }
+
+    void CloseActivateConfirm()
+    {
+        showActivateConfirm = false;
+        confirmTargetUserId = null;
+        confirmTargetUsername = null;
+    }
+
+    async Task ConfirmActivateAsync()
+    {
+        if (confirmTargetUserId == null) return;
+        
+        try
+        {
+            await UserCommands.ActivateAsync(confirmTargetUserId.Value);
+            ShowMessage("Baþarýlý", "Kullanýcý aktifleþtirildi.", MessageType.Success);
+            await LoadPageAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Kullanýcý aktifleþtirilemedi: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            CloseActivateConfirm();
+        }
+    }
+
+    void OpenDeactivateConfirm(Guid userId, string username)
+    {
+        confirmTargetUserId = userId;
+        confirmTargetUsername = username;
+        showDeactivateConfirm = true;
+    }
+
+    void CloseDeactivateConfirm()
+    {
+        showDeactivateConfirm = false;
+        confirmTargetUserId = null;
+        confirmTargetUsername = null;
+    }
+
+    async Task ConfirmDeactivateAsync()
+    {
+        if (confirmTargetUserId == null) return;
+        
+        try
+        {
+            await UserCommands.DeactivateAsync(confirmTargetUserId.Value);
+            ShowMessage("Baþarýlý", "Kullanýcý pasifleþtirildi.", MessageType.Success);
+            await LoadPageAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Kullanýcý pasifleþtirilemedi: {ex.Message}", MessageType.Error);
+        }
+        finally
+        {
+            CloseDeactivateConfirm();
+        }
+    }
+
+    async Task OpenRoleModal(Guid userId)
+    {
+        managingRolesForUserId = userId;
+        loadingRoles = true;
+        showRoleModal = true;
+        StateHasChanged();
+        try
+        {
+            userDetail = await UserQueries.GetByIdAsync(userId);
+        }
+        finally
+        {
+            loadingRoles = false;
+            StateHasChanged();
+        }
+    }
+
+    void CloseRoleModal()
+    {
+        showRoleModal = false;
+        managingRolesForUserId = null;
+        userDetail = null;
+    }
+
+    async Task AssignRoleAsync(Guid roleId)
+    {
+        if (managingRolesForUserId == null) return;
+        try
+        {
+            await UserCommands.AssignRoleAsync(managingRolesForUserId.Value, roleId);
+            userDetail = await UserQueries.GetByIdAsync(managingRolesForUserId.Value);
+            await LoadPageAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Rol atanamadý: {ex.Message}", MessageType.Error);
+        }
+    }
+
+    async Task RemoveRoleAsync(Guid roleId)
+    {
+        if (managingRolesForUserId == null) return;
+        try
+        {
+            await UserCommands.RemoveRoleAsync(managingRolesForUserId.Value, roleId);
+            userDetail = await UserQueries.GetByIdAsync(managingRolesForUserId.Value);
+            await LoadPageAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Hata", $"Rol kaldýrýlamadý: {ex.Message}", MessageType.Error);
+        }
+    }
+
+    void ShowMessage(string title, string message, MessageType type)
+    {
+        messageTitle = title;
+        messageContent = message;
+        messageType = type;
+        showMessageDialog = true;
+        StateHasChanged();
+    }
+
+    void CloseMessageDialog()
+    {
+        showMessageDialog = false;
+        messageTitle = null;
+        messageContent = null;
+        StateHasChanged();
+    }
+
+    class UserFormModel
+    {
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+        public string? PasswordConfirm { get; set; }
+    }
+}
+
+

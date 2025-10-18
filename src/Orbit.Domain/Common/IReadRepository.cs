@@ -35,4 +35,8 @@ public interface IReadRepository<TAggregate, TId>
     Task<TAggregate?> FirstOrDefaultAsync(
         ISpecification<TAggregate> specification,
         CancellationToken cancellationToken = default);
+
+    Task<TResult?> FirstOrDefaultAsync<TResult>(
+        BaseSpecification<TAggregate, TResult> specification,
+        CancellationToken cancellationToken = default) where TResult : class;
 }

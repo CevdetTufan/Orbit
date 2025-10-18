@@ -6,13 +6,13 @@
 
 <PageTitle>User Management</PageTitle>
 
-<div class="max-w-6xl mx-auto">
-	<h1 class="text-3xl font-bold mb-6">User Management</h1>
+<div class="max-w-7xl mx-auto">
+	<h1 class="text-3xl font-bold mb-6">Kullanýcý Yönetimi</h1>
 
 	<div class="mb-6 flex items-center gap-2">
-		<button class='@GetTabClass("role")' @onclick='() => SetTab("role")'>Role Creation</button>
-		<button class='@GetTabClass("permissions")' @onclick='() => SetTab("permissions")'>Role Permission Management</button>
-		<button class='@GetTabClass("user")' @onclick='() => SetTab("user")'>User Creation</button>
+		<button class='@GetTabClass("role")' @onclick='() => SetTab("role")'>Rol Yönetimi</button>
+		<button class='@GetTabClass("permissions")' @onclick='() => SetTab("permissions")'>Rol Ýzinleri</button>
+		<button class='@GetTabClass("user")' @onclick='() => SetTab("user")'>Kullanýcý Yönetimi</button>
 	</div>
 
 	@if (activeTab == "role")
@@ -40,7 +40,6 @@
 							}
 							else
 							{
-
 								@context.Name
 							}
 						</td>
@@ -51,20 +50,24 @@
 							}
 							else
 							{
-
 								@context.Description
 							}
 						</td>
 						<td class="px-6 py-2 text-right space-x-2">
 							@if (editRole?.Id == context.Id)
 							{
-								<button @onclick="() => SaveEditAsync(context.Id)" class="rounded-md bg-primary  px-3 py-1">Kaydet</button>
+								<button @onclick="() => SaveEditAsync(context.Id)" class="rounded-md bg-primary px-3 py-1">Kaydet</button>
 								<button @onclick="CancelEditRole" class="rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-1 text-sm">Ýptal</button>
 							}
 							else
 							{
 								<button @onclick="() => BeginEditRole(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
-								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" disabled="@(!context.CanDelete)" title="@(!context.CanDelete ? "Bu rol, kullanýcý atanmýþ olduðu için silinemez" : null)" class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
+								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)"
+										disabled="@(!context.CanDelete)"
+										title="@(!context.CanDelete ? "Bu rol, kullanýcý atanmýþ olduðu için silinemez" : null)"
+										class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">
+									Sil
+								</button>
 							}
 						</td>
 					</RowTemplate>
@@ -86,7 +89,6 @@
 					   Message="@messageContent"
 					   OnOk="CloseMessageDialog" />
 
-		@* Add Role Modal *@
 		@if (showAddRoleModal)
 		{
 			<div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="position:fixed;inset:0;z-index:2000;">
@@ -159,8 +161,11 @@
 	}
 	else
 	{
-		<div class="text-sm text-subtext-light dark:text-subtext-dark bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6">User creation coming soon.</div>
+		<div class="bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-lg p-6 shadow-sm">
+			<UserCreation />
+		</div>
 	}
+	
 </div>
 
 @code {
@@ -169,9 +174,7 @@
 	[Inject] IJSRuntime JS { get; set; } = default!;
 
 	string activeTab = "role";
-
 	List<RoleDto> roles = new();
-
 	RoleDto? editRole;
 	string? editRoleName;
 	string? editRoleDescription;
@@ -179,16 +182,12 @@
 	bool showDeleteModal;
 	Guid? deleteTargetId;
 	string? deleteTargetName;
-
-	// Modal için deðiþkenler
 	bool showAddRoleModal;
 	string? modalRoleName;
 	string? modalRoleDescription;
 	bool showModalValidation;
 	bool isCreatingFromModal;
 	string? modalFeedback;
-
-	// MessageDialog için deðiþkenler
 	bool showMessageDialog;
 	string? messageTitle;
 	string? messageContent;
@@ -244,17 +243,14 @@
 	async Task CreateRoleFromModalAsync()
 	{
 		showModalValidation = true;
-
 		if (string.IsNullOrWhiteSpace(modalRoleName))
 		{
 			StateHasChanged();
 			return;
 		}
-
 		isCreatingFromModal = true;
 		modalFeedback = null;
 		StateHasChanged();
-
 		try
 		{
 			await RoleCommands.CreateAsync(modalRoleName!, modalRoleDescription);
@@ -320,9 +316,7 @@
 
 	async Task ConfirmDeleteAsync()
 	{
-		if (deleteTargetId is null)
-			return;
-
+		if (deleteTargetId is null) return;
 		try
 		{
 			var deleted = await RoleCommands.DeleteIfNoUsersAsync(deleteTargetId.Value);
@@ -346,7 +340,6 @@
 		}
 	}
 
-	// MessageDialog için metodlar
 	void ShowMessage(string title, string message, MessageType type)
 	{
 		messageTitle = title;

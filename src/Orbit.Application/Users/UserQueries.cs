@@ -1,3 +1,5 @@
+using Orbit.Application.Common.Models;
+using Orbit.Application.Users.Models;
 using Orbit.Application.Users.Specifications;
 using Orbit.Domain.Common;
 using Orbit.Domain.Users;
@@ -8,6 +10,8 @@ public interface IUserQueries
 {
     Task<IReadOnlyList<UserDto>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<UserDto>> SearchAsync(string query, CancellationToken cancellationToken = default);
+    Task<PagedResult<UserListItemDto>> GetPagedAsync(int pageIndex, int pageSize, string? searchQuery = null, CancellationToken cancellationToken = default);
+    Task<UserDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 internal sealed class UserQueries : IUserQueries
@@ -35,6 +39,28 @@ internal sealed class UserQueries : IUserQueries
             .Select(u => new UserDto(u.Id, u.Username.Value, u.Email.Value, u.IsActive))
             .ToList();
     }
-}
 
-public sealed record UserDto(Guid Id, string Username, string Email, bool IsActive);
+    public async Task<PagedResult<UserListItemDto>> GetPagedAsync(int pageIndex, int pageSize, string? searchQuery = null, CancellationToken cancellationToken = default)
+    {
+        var spec = new UsersPagedSpec(pageIndex, pageSize, searchQuery);
+        var users = await _readRepository.ListAsync(spec, cancellationToken);
+        
+        // Client-side sýralama - EF Core Value Object'i translate edemediði için
+        var sortedUsers = users.OrderBy(u => u.Username).ToList();
+        
+        var countSpec = new UsersCountSpec(searchQuery);
+        var totalCount = await _readRepository.CountAsync(countSpec, cancellationToken);
+
+        return new PagedResult<UserListItemDto>
+        {
+            Items = sortedUsers,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<UserDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var spec = new UserByIdWithRolesSpec(id);
+        return await _readRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    }
+}
