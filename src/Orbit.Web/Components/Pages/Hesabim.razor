@@ -1,4 +1,4 @@
-﻿@page "/hesabim"
+@page "/hesabim"
 @using System.Security.Claims
 @using Orbit.Application.Auth.Models
 @using Orbit.Domain.Security
@@ -77,6 +77,49 @@
 	{
 		<div class="rounded-lg border border-dashed border-border-light dark:border-border-dark p-6 text-sm text-subtext-light dark:text-subtext-dark">Yukleniyor...</div>
 	}
+	else
+	{
+		<div class="mt-8">
+			<div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
+				<DataGrid TItem="LoginAttemptListItemDto" Context="row"
+						  Items="@attempts"
+						  Title="Giriş Geçmişi"
+						  TotalCount="@totalCount"
+						  PageIndex="@pageIndex"
+						  PageIndexChanged="@(i => pageIndex = i)"
+						  PageSize="@pageSize"
+						  PageSizeChanged="@(s => pageSize = s)"
+						  OnPageChange="HandleGridPageChange"
+						  EnablePaging="true"
+						  EnablePageSizeSelector="true"
+						  EnableEdit="false"
+						  EnableDelete="false"
+						  Loading="@loading">
+					<HeaderTemplate>
+						<th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
+						<th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
+						<th scope="col" class="px-6 py-3 w-24">IP</th>
+						<th scope="col" class="px-6 py-3">Tarayici</th>
+					</HeaderTemplate>
+					<RowTemplate>
+						<td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+						<td class="px-6 py-2">
+							@if (row.IsSuccessful)
+							{
+								<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
+							}
+							else
+							{
+								<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
+							}
+						</td>
+						<td class="px-6 py-2">@row.RemoteIp</td>
+						<td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
+					</RowTemplate>
+				</DataGrid>
+			</div>
+		</div>
+	}
 
 	<ConfirmDialog Visible="@showLogoutConfirm"
 				   Title="Oturumu kapat"
@@ -85,49 +128,6 @@
 				   CancelText="İptal"
 				   OnConfirm="ConfirmLogoutAsync"
 				   OnCancel="(()=> showLogoutConfirm = false)" />
-	else
-	{
-	<div class="mt-8">
-		<div class="overflow-x-auto rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark">
-			<DataGrid TItem="LoginAttemptListItemDto" Context="row"
-					  Items="@attempts"
-					  Title="Giriş Geçmişi"
-					  TotalCount="@totalCount"
-					  PageIndex="@pageIndex"
-					  PageIndexChanged="@(i => pageIndex = i)"
-					  PageSize="@pageSize"
-					  PageSizeChanged="@(s => pageSize = s)"
-					  OnPageChange="HandleGridPageChange"
-					  EnablePaging="true"
-					  EnablePageSizeSelector="true"
-					  EnableEdit="false"
-					  EnableDelete="false"
-					  Loading="@loading">
-				<HeaderTemplate>
-					<th scope="col" class="px-6 py-3 w-48">Tarih (UTC)</th>
-					<th scope="col" class="px-6 py-3 w-24">Giriş Başarılı Mı?</th>
-					<th scope="col" class="px-6 py-3 w-24">IP</th>
-					<th scope="col" class="px-6 py-3">Tarayici</th>
-				</HeaderTemplate>
-				<RowTemplate>
-					<td class="px-6 py-2 whitespace-nowrap">@row.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-					<td class="px-6 py-2">
-						@if (row.IsSuccessful)
-						{
-							<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">Evet</span>
-						}
-						else
-						{
-							<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">Hayir</span>
-						}
-					</td>
-					<td class="px-6 py-2">@row.RemoteIp</td>
-					<td class="px-6 py-2 truncate" title="@row.UserAgent">@row.UserAgent</td>
-				</RowTemplate>
-			</DataGrid>
-		</div>
-	</div>
-	}
 
 	@if (showEmailModal)
 	{

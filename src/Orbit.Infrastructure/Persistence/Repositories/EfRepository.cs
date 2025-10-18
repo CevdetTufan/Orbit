@@ -62,6 +62,8 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 		ISpecification<TAggregate> specification,
 		CancellationToken cancellationToken = default)
 	{
+		// Don't use AsNoTracking for entity specifications
+		// Write operations need tracked entities
 		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
 		return await query.ToListAsync(cancellationToken);
 	}
@@ -78,6 +80,7 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 		ISpecification<TAggregate> specification,
 		CancellationToken cancellationToken = default)
 	{
+		// Don't use AsNoTracking - let specification decide via DisableTracking()
 		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
 		return await query.FirstOrDefaultAsync(cancellationToken);
 	}

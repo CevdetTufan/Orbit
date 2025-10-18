@@ -14,21 +14,18 @@ public interface IAccountService
 
 internal sealed class AccountService : IAccountService
 {
-    private readonly IReadRepository<User, Guid> _usersRead;
-    private readonly IWriteRepository<User, Guid> _usersWrite;
+    private readonly IRepository<User, Guid> _userRepository;
     private readonly IUnitOfWork _uow;
     private readonly IUserCredentialStore _credentialStore;
     private readonly IPasswordHasher _passwordHasher;
 
     public AccountService(
-        IReadRepository<User, Guid> usersRead,
-        IWriteRepository<User, Guid> usersWrite,
+        IRepository<User, Guid> userRepository,
         IUnitOfWork uow,
         IUserCredentialStore credentialStore,
         IPasswordHasher passwordHasher)
     {
-        _usersRead = usersRead;
-        _usersWrite = usersWrite;
+        _userRepository = userRepository;
         _uow = uow;
         _credentialStore = credentialStore;
         _passwordHasher = passwordHasher;
@@ -36,26 +33,41 @@ internal sealed class AccountService : IAccountService
 
     public async Task UpdateEmailAsync(string username, string newEmail, CancellationToken cancellationToken = default)
     {
-        var user = await _usersRead.FirstOrDefaultAsync(new UserByUsernameWithRolesSpec(username), cancellationToken)
-                   ?? throw new InvalidOperationException("User not found");
+        // Get user ID first without tracking
+        var users = await _userRepository.ListAsync(
+            u => u.Username == Username.Create(username), 
+            cancellationToken);
+        
+        var user = users.FirstOrDefault() ?? throw new InvalidOperationException("User not found");
+        var userId = user.Id;
 
-        user.UpdateEmail(Email.Create(newEmail));
-        _usersWrite.Update(user);
+        // Now get the tracked entity using GetByIdAsync
+        // GetByIdAsync will handle detaching any existing tracked instance
+        var trackedUser = await _userRepository.GetByIdAsync(userId, cancellationToken)
+                          ?? throw new InvalidOperationException("User not found");
+
+        trackedUser.UpdateEmail(Email.Create(newEmail));
+        _userRepository.Update(trackedUser);
         await _uow.SaveChangesAsync(cancellationToken);
     }
 
     public async Task ChangePasswordAsync(string username, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
-        var user = await _usersRead.FirstOrDefaultAsync(new UserByUsernameWithRolesSpec(username), cancellationToken)
-                   ?? throw new InvalidOperationException("User not found");
+        // Get user ID first without tracking
+        var users = await _userRepository.ListAsync(
+            u => u.Username == Username.Create(username), 
+            cancellationToken);
+        
+        var user = users.FirstOrDefault() ?? throw new InvalidOperationException("User not found");
+        var userId = user.Id;
 
-        var cred = await _credentialStore.GetByUserIdAsync(user.Id, cancellationToken)
+        var cred = await _credentialStore.GetByUserIdAsync(userId, cancellationToken)
                    ?? throw new InvalidOperationException("Credentials not found");
 
         if (!_passwordHasher.Verify(currentPassword, cred.PasswordHash))
             throw new UnauthorizedAccessException("Current password is incorrect");
 
         var newHash = _passwordHasher.Hash(newPassword);
-        await _credentialStore.SetAsync(user.Id, newHash, cancellationToken);
+        await _credentialStore.SetAsync(userId, newHash, cancellationToken);
     }
 }

@@ -62,10 +62,12 @@
 							else
 							{
 								<button @onclick="() => BeginEditRole(context)" class="rounded-md bg-primary/10 text-primary px-3 py-1 text-sm">Düzenle</button>
-								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)" 
-										disabled="@(!context.CanDelete)" 
-										title="@(!context.CanDelete ? "Bu rol, kullanýcý atanmýþ olduðu için silinemez" : null)" 
-										class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">Sil</button>
+								<button @onclick="() => OpenDeleteModal(context.Id, context.Name)"
+										disabled="@(!context.CanDelete)"
+										title="@(!context.CanDelete ? "Bu rol, kullanýcý atanmýþ olduðu için silinemez" : null)"
+										class="rounded-md px-3 py-1 text-sm @(context.CanDelete ? "bg-red-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500")">
+									Sil
+								</button>
 							}
 						</td>
 					</RowTemplate>
@@ -163,6 +165,7 @@
 			<UserCreation />
 		</div>
 	}
+	
 </div>
 
 @code {
