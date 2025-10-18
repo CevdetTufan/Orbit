@@ -49,4 +49,9 @@ public sealed class User : Entity<Guid>, IAggregateRoot
     {
         Email = email;
     }
+
+    public void UpdateUsername(Username username)
+    {
+        Username = username;
+    }
 }

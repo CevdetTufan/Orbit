@@ -94,26 +94,14 @@
                 </h2>
             </div>
             <div class="p-6 space-y-4">
-                @if (editingUserId == null)
-                {
-                    <div>
-                        <label class="block text-sm font-medium mb-2">
-                            Kullanýcý Adý <span class="text-red-500">*</span>
-                        </label>
-                        <input @bind="userForm.Username"
-                               placeholder="Kullanýcý adý"
-                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">
-                            Þifre <span class="text-red-500">*</span>
-                        </label>
-                        <input @bind="userForm.Password"
-                               type="password"
-                               placeholder="Þifre"
-                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                }
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        Kullanýcý Adý <span class="text-red-500">*</span>
+                    </label>
+                    <input @bind="userForm.Username"
+                           placeholder="Kullanýcý adý"
+                           class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">
                         E-posta <span class="text-red-500">*</span>
@@ -123,6 +111,51 @@
                            placeholder="E-posta adresi"
                            class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
+                @if (editingUserId == null)
+                {
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Þifre <span class="text-red-500">*</span>
+                        </label>
+                        <input @bind="userForm.Password"
+                               type="password"
+                               placeholder="Þifre"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Þifre Tekrar <span class="text-red-500">*</span>
+                        </label>
+                        <input @bind="userForm.PasswordConfirm"
+                               type="password"
+                               placeholder="Þifre tekrar"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Yeni Þifre (Boþ býrakýlýrsa deðiþtirilmez)
+                        </label>
+                        <input @bind="userForm.Password"
+                               type="password"
+                               placeholder="Yeni þifre (opsiyonel)"
+                               class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(userForm.Password))
+                    {
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Þifre Tekrar <span class="text-red-500">*</span>
+                            </label>
+                            <input @bind="userForm.PasswordConfirm"
+                                   type="password"
+                                   placeholder="Þifre tekrar"
+                                   class="block w-full rounded-lg border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                        </div>
+                    }
+                }
                 @if (!string.IsNullOrWhiteSpace(userFormFeedback))
                 {
                     <div class="text-sm text-red-500">@userFormFeedback</div>
@@ -341,7 +374,11 @@
         var user = users.FirstOrDefault(u => u.Id == userId);
         if (user != null)
         {
-            userForm = new UserFormModel { Email = user.Email };
+            userForm = new UserFormModel 
+            { 
+                Username = user.Username,
+                Email = user.Email 
+            };
         }
         userFormFeedback = null;
         showUserModal = true;
@@ -358,22 +395,45 @@
     async Task SaveUserAsync()
     {
         userFormFeedback = null;
+        
+        // Validation
+        if (string.IsNullOrWhiteSpace(userForm.Username))
+        {
+            userFormFeedback = "Kullanýcý adý gerekli";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(userForm.Email))
+        {
+            userFormFeedback = "E-posta adresi gerekli";
+            return;
+        }
+        
+        // Create mode: Password required
         if (editingUserId == null)
         {
-            if (string.IsNullOrWhiteSpace(userForm.Username) || 
-                string.IsNullOrWhiteSpace(userForm.Email) || 
-                string.IsNullOrWhiteSpace(userForm.Password))
+            if (string.IsNullOrWhiteSpace(userForm.Password))
             {
-                userFormFeedback = "Tüm alanlarý doldurun";
+                userFormFeedback = "Þifre gerekli";
+                return;
+            }
+            
+            if (userForm.Password != userForm.PasswordConfirm)
+            {
+                userFormFeedback = "Þifreler eþleþmiyor";
                 return;
             }
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(userForm.Email))
+            // Edit mode: Password optional but must match if provided
+            if (!string.IsNullOrWhiteSpace(userForm.Password))
             {
-                userFormFeedback = "E-posta adresi gerekli";
-                return;
+                if (userForm.Password != userForm.PasswordConfirm)
+                {
+                    userFormFeedback = "Þifreler eþleþmiyor";
+                    return;
+                }
             }
         }
 
@@ -384,12 +444,21 @@
         {
             if (editingUserId == null)
             {
+                // Create new user
                 await UserCommands.CreateWithPasswordAsync(userForm.Username!, userForm.Email!, userForm.Password!);
                 ShowMessage("Baþarýlý", "Kullanýcý baþarýyla oluþturuldu.", MessageType.Success);
             }
             else
             {
-                await UserCommands.UpdateAsync(editingUserId.Value, userForm.Email!);
+                // Update existing user
+                await UserCommands.UpdateAsync(editingUserId.Value, userForm.Username!, userForm.Email!);
+                
+                // Update password if provided
+                if (!string.IsNullOrWhiteSpace(userForm.Password))
+                {
+                    await UserCommands.UpdatePasswordAsync(editingUserId.Value, userForm.Password!);
+                }
+                
                 ShowMessage("Baþarýlý", "Kullanýcý baþarýyla güncellendi.", MessageType.Success);
             }
             CloseUserModal();
@@ -550,5 +619,6 @@
         public string? Username { get; set; }
         public string? Email { get; set; }
         public string? Password { get; set; }
+        public string? PasswordConfirm { get; set; }
     }
 }

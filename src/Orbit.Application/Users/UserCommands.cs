@@ -10,7 +10,8 @@ public interface IUserCommands
 {
     Task<Guid> CreateAsync(string username, string email, CancellationToken cancellationToken = default);
     Task<Guid> CreateWithPasswordAsync(string username, string email, string password, CancellationToken cancellationToken = default);
-    Task UpdateAsync(Guid id, string email, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Guid id, string username, string email, CancellationToken cancellationToken = default);
+    Task UpdatePasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken = default);
     Task ActivateAsync(Guid id, CancellationToken cancellationToken = default);
     Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
     Task AssignRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
@@ -56,13 +57,14 @@ internal sealed class UserCommands : IUserCommands
         return id;
     }
 
-    public async Task UpdateAsync(Guid id, string email, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Guid id, string username, string email, CancellationToken cancellationToken = default)
     {
         try
         {
             var user = await _userRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
 
+            user.UpdateUsername(Username.Create(username));
             user.UpdateEmail(Email.Create(email));
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -73,9 +75,27 @@ internal sealed class UserCommands : IUserCommands
             {
                 var freshUser = await _userRepository.GetByIdAsync(id, cancellationToken)
                     ?? throw new InvalidOperationException("User not found");
+                freshUser.UpdateUsername(Username.Create(username));
                 freshUser.UpdateEmail(Email.Create(email));
                 _userRepository.Update(freshUser);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+            });
+        }
+    }
+
+    public async Task UpdatePasswordAsync(Guid id, string newPassword, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var hash = _passwordHasher.Hash(newPassword);
+            await _credentialStore.SetAsync(id, hash, cancellationToken);
+        }
+        catch (Exception ex) when (IsConcurrencyException(ex))
+        {
+            await HandleConcurrencyAndRetryAsync(async () =>
+            {
+                var hash = _passwordHasher.Hash(newPassword);
+                await _credentialStore.SetAsync(id, hash, cancellationToken);
             });
         }
     }
