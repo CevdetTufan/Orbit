@@ -53,6 +53,13 @@ internal sealed class UserCommands : IUserCommands
             throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
         }
 
+        // Check email uniqueness
+        var isEmailTaken = await _uniquenessChecker.IsEmailTakenAsync(email, null, cancellationToken);
+        if (isEmailTaken)
+        {
+            throw new UsersDomainException($"E-posta '{email}' zaten kullanýlýyor.");
+        }
+
         var user = User.Create(username, email);
         await _userRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -78,6 +85,13 @@ internal sealed class UserCommands : IUserCommands
                 throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
             }
 
+            // Check email uniqueness
+            var isEmailTaken = await _uniquenessChecker.IsEmailTakenAsync(email, id, cancellationToken);
+            if (isEmailTaken)
+            {
+                throw new UsersDomainException($"E-posta '{email}' zaten kullanýlýyor.");
+            }
+
             var user = await _userRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
 
@@ -95,6 +109,13 @@ internal sealed class UserCommands : IUserCommands
                 if (isUsernameTaken)
                 {
                     throw new UsersDomainException($"Kullanýcý adý '{username}' zaten kullanýlýyor.");
+                }
+
+                // Check email uniqueness again in retry
+                var isEmailTaken = await _uniquenessChecker.IsEmailTakenAsync(email, id, cancellationToken);
+                if (isEmailTaken)
+                {
+                    throw new UsersDomainException($"E-posta '{email}' zaten kullanýlýyor.");
                 }
 
                 var freshUser = await _userRepository.GetByIdAsync(id, cancellationToken)

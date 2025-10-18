@@ -23,4 +23,15 @@ internal sealed class UserUniquenessChecker : IUserUniquenessChecker
         
         return users.Any();
     }
+
+    public async Task<bool> IsEmailTakenAsync(string email, Guid? excludeUserId = null, CancellationToken cancellationToken = default)
+    {
+        var emailValue = Email.Create(email);
+        
+        var users = await _userRepository.ListAsync(
+            u => u.Email == emailValue && (!excludeUserId.HasValue || u.Id != excludeUserId.Value),
+            cancellationToken);
+        
+        return users.Any();
+    }
 }

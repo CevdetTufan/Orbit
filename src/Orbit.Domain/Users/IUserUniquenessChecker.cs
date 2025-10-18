@@ -13,4 +13,13 @@ public interface IUserUniquenessChecker
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if username is taken, false otherwise</returns>
     Task<bool> IsUsernameTakenAsync(string username, Guid? excludeUserId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if an email is already taken by another user.
+    /// </summary>
+    /// <param name="email">Email to check</param>
+    /// <param name="excludeUserId">User ID to exclude from check (for updates)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if email is taken, false otherwise</returns>
+    Task<bool> IsEmailTakenAsync(string email, Guid? excludeUserId = null, CancellationToken cancellationToken = default);
 }
