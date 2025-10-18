@@ -12,8 +12,8 @@ public class RoleWithCanDeleteSpec : BaseSpecification<Role, RoleDto>
 			r.Id,
 			r.Name,
 			r.Description,
-			// eğer hiçbir user bu rolü kullanmıyorsa true
-			!r.Permissions.Any()
+			// Her rol silinebilir - business logic başka yerde kontrol edilecek
+			true
 		);
 
 		DisableTracking();

@@ -539,6 +539,12 @@
             await RolePermissionCommands.AssignPermissionToRoleAsync(selectedRole.Id, permissionId);
             await LoadRolePermissionsAsync(selectedRole.Id);
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            ShowMessage("Uyarý", "Rol veya izin bulunamadý. Liste yenileniyor...", MessageType.Warning);
+            await LoadRolesAsync();
+            BackToRoleSelection();
+        }
         catch (Exception ex)
         {
             ShowMessage("Hata", $"Ýzin atanýrken hata oluþtu: {ex.Message}", MessageType.Error);
@@ -559,6 +565,12 @@
         {
             await RolePermissionCommands.RemovePermissionFromRoleAsync(selectedRole.Id, permissionId);
             await LoadRolePermissionsAsync(selectedRole.Id);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            ShowMessage("Uyarý", "Rol bulunamadý. Liste yenileniyor...", MessageType.Warning);
+            await LoadRolesAsync();
+            BackToRoleSelection();
         }
         catch (Exception ex)
         {
