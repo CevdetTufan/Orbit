@@ -13,29 +13,33 @@
                     <div class="flex-1">
                         <h2 class="text-xl font-bold text-text-light dark:text-text-dark">Rol Ýzin Yönetimi</h2>
                         <p class="text-subtext-light dark:text-subtext-dark mt-1 text-sm">Ýzinlerini yönetmek istediðiniz rolü seçin</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <!-- Rol Sayýsý -->
                         @if (!loadingRoles)
                         {
-                            <div class="mt-2">
+                            <div class="text-right">
                                 <span class="text-lg font-semibold text-primary">@roles.Count</span>
                                 <span class="text-subtext-light dark:text-subtext-dark text-sm"> rol</span>
                             </div>
                         }
-                    </div>
-                    
-                    <!-- Görünüm Seçici -->
-                    <div class="flex items-center gap-2 bg-content-light dark:bg-content-dark rounded-lg p-1">
-                        <button @onclick='() => SetViewMode("grid")'
-                                class="@GetViewButtonClass("grid") px-3 py-2 rounded-md text-sm font-medium transition-all">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                            </svg>
-                        </button>
-                        <button @onclick='() => SetViewMode("list")'
-                                class="@GetViewButtonClass("list") px-3 py-2 rounded-md text-sm font-medium transition-all">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                            </svg>
-                        </button>
+                        
+                        <!-- Görünüm Seçici -->
+                        <div class="flex items-center gap-2 bg-content-light dark:bg-content-dark rounded-lg p-1">
+                            <button @onclick='() => SetViewMode("grid")'
+                                    class="@GetViewButtonClass("grid") px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                            </button>
+                            <button @onclick='() => SetViewMode("list")'
+                                    class="@GetViewButtonClass("list") px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
