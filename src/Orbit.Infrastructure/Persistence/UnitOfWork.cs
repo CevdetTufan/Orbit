@@ -12,6 +12,12 @@ internal sealed class UnitOfWork : IUnitOfWork
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _dbContext.SaveChangesAsync(cancellationToken);
+    {
+        // Explicitly detect changes before saving
+        // This ensures collection changes (like adding UserRole) are properly detected
+        _dbContext.ChangeTracker.DetectChanges();
+        
+        return _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
 

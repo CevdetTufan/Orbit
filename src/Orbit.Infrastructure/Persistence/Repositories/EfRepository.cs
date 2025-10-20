@@ -80,7 +80,20 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 		ISpecification<TAggregate> specification,
 		CancellationToken cancellationToken = default)
 	{
-		// Don't use AsNoTracking - let specification decide via DisableTracking()
+		// For write operations (tracked entities), we need to ensure clean state
+		if (!specification.AsNoTracking && specification.Criteria != null)
+		{
+			// Check if entity is already tracked locally
+			var localEntity = TryGetLocalEntity(specification.Criteria);
+			if (localEntity != null)
+			{
+				// Detach the aggregate and all related entities in the graph
+				// This ensures we get a completely fresh load from the database
+				DetachEntityGraph(localEntity);
+			}
+		}
+
+		// Query database with includes - returns tracked entity
 		var query = SpecificationEvaluator.GetQuery(_set.AsQueryable(), specification);
 		return await query.FirstOrDefaultAsync(cancellationToken);
 	}
@@ -100,4 +113,33 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 	public void Update(TAggregate entity) => _set.Update(entity);
 
 	public void Remove(TAggregate entity) => _set.Remove(entity);
+
+	private TAggregate? TryGetLocalEntity(Expression<Func<TAggregate, bool>> criteria)
+	{
+		try
+		{
+			// Try to compile and execute the criteria against local entities
+			var compiledCriteria = criteria.Compile();
+			return _set.Local.FirstOrDefault(compiledCriteria);
+		}
+		catch
+		{
+			// If compilation fails (complex expressions), return null
+			return null;
+		}
+	}
+
+	private void DetachEntityGraph(TAggregate entity)
+	{
+		// Get all entries in the change tracker
+		var allEntries = _dbContext.ChangeTracker.Entries()
+			.Where(e => e.State != EntityState.Detached)
+			.ToList();
+
+		// Detach everything - this ensures complete fresh load
+		foreach (var entry in allEntries)
+		{
+			entry.State = EntityState.Detached;
+		}
+	}
 }
