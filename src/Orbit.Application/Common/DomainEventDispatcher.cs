@@ -30,14 +30,20 @@ internal sealed class DomainEventDispatcher : IDomainEventDispatcher
         
         foreach (var handler in handlers)
         {
+            if (handler == null) continue;
+            
             try
             {
                 var method = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync));
                 if (method != null)
                 {
-                    await (Task)method.Invoke(handler, new object[] { domainEvent, cancellationToken })!;
-                    _logger.LogDebug("Successfully handled {EventType} with {HandlerType}", 
-                        eventType.Name, handler.GetType().Name);
+                    var result = method.Invoke(handler, new object[] { domainEvent, cancellationToken });
+                    if (result is Task task)
+                    {
+                        await task;
+                        _logger.LogDebug("Successfully handled {EventType} with {HandlerType}", 
+                            eventType.Name, handler.GetType().Name);
+                    }
                 }
             }
             catch (Exception ex)
