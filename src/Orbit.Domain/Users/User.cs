@@ -1,5 +1,6 @@
 using Orbit.Domain.Common;
 using Orbit.Domain.Users.ValueObjects;
+using Orbit.Domain.Users.Events;
 using Orbit.Domain.Authorization;
 
 namespace Orbit.Domain.Users;
@@ -27,7 +28,16 @@ public sealed class User : Entity<Guid>, IAggregateRoot
         return new User(Guid.NewGuid(), Username.Create(username), Email.Create(email));
     }
 
-    public void Deactivate() => IsActive = false;
+    public void Deactivate()
+    {
+        if (!IsActive) return; // Already inactive, no need to raise event again
+        
+        IsActive = false;
+        
+        // Raise domain event
+        AddDomainEvent(new UserDeactivatedEvent(Id, Username.Value));
+    }
+    
     public void Activate() => IsActive = true;
 
     public void AssignRole(Role role)

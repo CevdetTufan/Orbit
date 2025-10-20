@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Orbit.Application;
+using Orbit.Application.Users;
 using Orbit.Infrastructure;
 using Orbit.Infrastructure.Persistence;
 using Orbit.Infrastructure.Seeding;
 using Orbit.Web.Components;
+using Orbit.Web.Services;
 using Microsoft.AspNetCore.DataProtection;
 using System.IO;
 
@@ -29,6 +31,11 @@ Directory.CreateDirectory(keysPath);
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
     .SetApplicationName("Orbit.Web");
+
+// Session Manager (Singleton - shared across all circuits)
+builder.Services.AddSingleton<BlazorUserSessionManager>();
+builder.Services.AddScoped<IUserSessionManager>(sp => sp.GetRequiredService<BlazorUserSessionManager>());
+
 // Circuit-scoped auth state (no cookies/controllers)
 builder.Services.AddScoped<Orbit.Web.Security.CircuitAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
