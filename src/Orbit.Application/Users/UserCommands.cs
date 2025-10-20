@@ -2,6 +2,7 @@ using Orbit.Application.Auth;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
 using Orbit.Domain.Users;
+using Orbit.Domain.Users.Specifications;
 using Orbit.Domain.Users.ValueObjects;
 
 namespace Orbit.Application.Users;
@@ -22,6 +23,7 @@ public interface IUserCommands
 internal sealed class UserCommands : IUserCommands
 {
     private readonly IRepository<User, Guid> _userRepository;
+    private readonly IRepository<UserRole, Guid> _userRoleRepository;
     private readonly IReadRepository<Role, Guid> _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
@@ -30,6 +32,7 @@ internal sealed class UserCommands : IUserCommands
 
     public UserCommands(
         IRepository<User, Guid> userRepository,
+        IRepository<UserRole, Guid> userRoleRepository,
         IReadRepository<Role, Guid> roleRepository,
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
@@ -37,6 +40,7 @@ internal sealed class UserCommands : IUserCommands
         IUserUniquenessChecker uniquenessChecker)
     {
         _userRepository = userRepository;
+        _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
@@ -197,26 +201,42 @@ internal sealed class UserCommands : IUserCommands
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
+            var user = await GetUserWithRolesAsync(userId, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
+
+            // Check if role is already assigned
+            if (user.Roles.Any(ur => ur.RoleId == roleId))
+            {
+                return; // Already assigned, nothing to do
+            }
 
             var role = await _roleRepository.GetByIdAsync(roleId, cancellationToken)
                 ?? throw new InvalidOperationException("Role not found");
 
-            user.AssignRole(role);
-            _userRepository.Update(user);
+            // Create UserRole entity and add it directly to the repository
+            // This ensures EF Core tracks it as Added, not Modified
+            var userRole = UserRole.Create(user, role);
+            await _userRoleRepository.AddAsync(userRole, cancellationToken);
+            
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex) when (IsConcurrencyException(ex))
         {
             await HandleConcurrencyAndRetryAsync(async () =>
             {
-                var freshUser = await _userRepository.GetByIdAsync(userId, cancellationToken)
+                var freshUser = await GetUserWithRolesAsync(userId, cancellationToken)
                     ?? throw new InvalidOperationException("User not found");
+                
+                if (freshUser.Roles.Any(ur => ur.RoleId == roleId))
+                {
+                    return;
+                }
+
                 var freshRole = await _roleRepository.GetByIdAsync(roleId, cancellationToken)
                     ?? throw new InvalidOperationException("Role not found");
-                freshUser.AssignRole(freshRole);
-                _userRepository.Update(freshUser);
+                
+                var userRole = UserRole.Create(freshUser, freshRole);
+                await _userRoleRepository.AddAsync(userRole, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             });
         }
@@ -226,22 +246,32 @@ internal sealed class UserCommands : IUserCommands
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
+            var user = await GetUserWithRolesAsync(userId, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
 
-            user.RemoveRole(roleId);
-            _userRepository.Update(user);
+            var userRole = user.Roles.FirstOrDefault(ur => ur.RoleId == roleId);
+            if (userRole == null)
+            {
+                return; // Not assigned, nothing to do
+            }
+
+            // Remove UserRole entity directly from repository
+            _userRoleRepository.Remove(userRole);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex) when (IsConcurrencyException(ex))
         {
             await HandleConcurrencyAndRetryAsync(async () =>
             {
-                var freshUser = await _userRepository.GetByIdAsync(userId, cancellationToken)
+                var freshUser = await GetUserWithRolesAsync(userId, cancellationToken)
                     ?? throw new InvalidOperationException("User not found");
-                freshUser.RemoveRole(roleId);
-                _userRepository.Update(freshUser);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                
+                var userRole = freshUser.Roles.FirstOrDefault(ur => ur.RoleId == roleId);
+                if (userRole != null)
+                {
+                    _userRoleRepository.Remove(userRole);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
             });
         }
     }
@@ -250,7 +280,7 @@ internal sealed class UserCommands : IUserCommands
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
+            var user = await GetUserWithRolesAsync(userId, cancellationToken)
                 ?? throw new InvalidOperationException("User not found");
 
             var roles = await _roleRepository.ListAsync(r => roleIds.Contains(r.Id), cancellationToken);
@@ -260,17 +290,24 @@ internal sealed class UserCommands : IUserCommands
 
             foreach (var role in roles)
             {
-                user.AssignRole(role);
+                // Check if already assigned
+                if (user.Roles.Any(ur => ur.RoleId == role.Id))
+                {
+                    continue;
+                }
+
+                // Add each UserRole directly
+                var userRole = UserRole.Create(user, role);
+                await _userRoleRepository.AddAsync(userRole, cancellationToken);
             }
 
-            _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex) when (IsConcurrencyException(ex))
         {
             await HandleConcurrencyAndRetryAsync(async () =>
             {
-                var freshUser = await _userRepository.GetByIdAsync(userId, cancellationToken)
+                var freshUser = await GetUserWithRolesAsync(userId, cancellationToken)
                     ?? throw new InvalidOperationException("User not found");
                 var freshRoles = await _roleRepository.ListAsync(r => roleIds.Contains(r.Id), cancellationToken);
                 
@@ -279,16 +316,32 @@ internal sealed class UserCommands : IUserCommands
 
                 foreach (var role in freshRoles)
                 {
-                    freshUser.AssignRole(role);
+                    if (freshUser.Roles.Any(ur => ur.RoleId == role.Id))
+                    {
+                        continue;
+                    }
+
+                    var userRole = UserRole.Create(freshUser, role);
+                    await _userRoleRepository.AddAsync(userRole, cancellationToken);
                 }
 
-                _userRepository.Update(freshUser);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             });
         }
     }
 
     // Helper methods for concurrency handling
+    
+    /// <summary>
+    /// Gets a User entity with UserRoles included for write operations.
+    /// Uses specification to ensure proper tracking and include of related entities.
+    /// </summary>
+    private async Task<User?> GetUserWithRolesAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var specification = new UserWithRolesSpecification(userId);
+        return await _userRepository.FirstOrDefaultAsync(specification, cancellationToken);
+    }
+
     private static async Task HandleConcurrencyAndRetryAsync(Func<Task> retryOperation)
     {
         try

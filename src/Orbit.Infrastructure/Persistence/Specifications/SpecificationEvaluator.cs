@@ -30,9 +30,16 @@ internal static class SpecificationEvaluator
             if (spec.Take is not null) query = query.Take(spec.Take.Value);
         }
 
+        // Apply expression-based includes
         foreach (var include in spec.Includes)
         {
             query = query.Include(include);
+        }
+
+        // Apply string-based includes (supports ThenInclude syntax like "Roles.Role")
+        foreach (var includeString in spec.IncludeStrings)
+        {
+            query = query.Include(includeString);
         }
 
 		if (spec.AsNoTracking)

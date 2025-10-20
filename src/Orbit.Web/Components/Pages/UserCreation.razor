@@ -186,12 +186,12 @@
 {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="position:fixed;inset:0;z-index:2000;">
         <div class="fixed inset-0 bg-black/40" @onclick="CloseRoleModal"></div>
-        <div class="w-full max-w-2xl mx-auto rounded-lg bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-xl" style="position:relative;z-index:2001;">
+        <div class="w-full max-w-md mx-auto rounded-lg bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-xl" style="position:relative;z-index:2001;">
             <div class="px-6 py-4 border-b border-border-light dark:border-border-dark">
                 <h2 class="text-lg font-semibold">Rol Yönetimi</h2>
                 <p class="text-sm text-subtext-light dark:text-subtext-dark mt-1">Kullanýcýya atanmýþ rolleri yönetin</p>
             </div>
-            <div class="p-6">
+            <div class="p-6 space-y-4">
                 @if (loadingRoles)
                 {
                     <div class="flex justify-center py-8">

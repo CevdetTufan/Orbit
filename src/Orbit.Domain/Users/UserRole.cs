@@ -3,7 +3,7 @@ using Orbit.Domain.Common;
 
 namespace Orbit.Domain.Users;
 
-public sealed class UserRole : Entity<Guid>
+public sealed class UserRole : Entity<Guid>, IAggregateRoot
 {
     public Guid UserId { get; private set; }
     public Guid RoleId { get; private set; }
@@ -20,10 +20,9 @@ public sealed class UserRole : Entity<Guid>
     }
 
     public static UserRole Create(User user, Role role)
-        => new(Guid.NewGuid(), user.Id, role.Id)
-        {
-            User = user,
-            Role = role
-        };
+    {
+        // Only set foreign keys, EF Core will handle navigation properties
+        return new(Guid.NewGuid(), user.Id, role.Id);
+    }
 }
 

@@ -1,4 +1,3 @@
-using Orbit.Application.Authorization.Models;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
 
@@ -10,6 +9,7 @@ public class RoleWithPermissionsSpec : BaseSpecification<Role, Role>
     {
         AddInclude(r => r.Permissions);
         
-        DisableTracking();
+        // Enable tracking for write operations (entity updates)
+        EnableTracking();
     }
 }

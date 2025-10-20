@@ -30,7 +30,10 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(ur => ur.User)
             .HasForeignKey(ur => ur.UserId);
 
-        builder.Navigation(u => u.Roles).UsePropertyAccessMode(PropertyAccessMode.Field);
+        // Explicitly specify the backing field for the Roles collection
+        builder.Navigation(u => u.Roles)
+            .HasField("_roles")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 
