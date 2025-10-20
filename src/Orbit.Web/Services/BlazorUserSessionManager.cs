@@ -4,11 +4,32 @@ using System.Collections.Concurrent;
 namespace Orbit.Web.Services;
 
 /// <summary>
-/// Manages Blazor Server user sessions and circuit tracking
+/// Manages Blazor Server user sessions and circuit tracking using in-memory storage.
 /// </summary>
+/// <remarks>
+/// <para><b>?? SCALABILITY WARNING:</b></para>
+/// <list type="bullet">
+/// <item><description><b>Suitable for:</b> Single-server deployments with &lt; 100K active users</description></item>
+/// <item><description><b>Memory usage:</b> ~1 GB for 1M users (in-memory dictionary)</description></item>
+/// <item><description><b>Multi-server:</b> Does NOT work in load-balanced environments</description></item>
+/// <item><description><b>Memory leak risk:</b> Orphaned circuits can accumulate if not properly cleaned up</description></item>
+/// </list>
+/// <para>
+/// <b>?? Migration Required:</b> When reaching 100K+ users or deploying to multiple servers,
+/// migrate to Redis-based implementation. See <c>docs/scalability-risks-and-solutions.md</c>
+/// </para>
+/// <para>
+/// <b>Alternative Implementations:</b>
+/// <list type="bullet">
+/// <item><description><c>RedisUserSessionManager</c> - For distributed environments</description></item>
+/// <item><description><c>SignalRUserSessionManager</c> - With SignalR Backplane for real-time notifications</description></item>
+/// </list>
+/// </para>
+/// </remarks>
 public sealed class BlazorUserSessionManager : IUserSessionManager
 {
     // Kullanýcý adý -> Circuit ID listesi mapping
+    // ?? IN-MEMORY: Tek sunucu sýnýrlý, restart'ta kaybolur
     private readonly ConcurrentDictionary<string, HashSet<string>> _userCircuits = new();
     private readonly ILogger<BlazorUserSessionManager> _logger;
     
@@ -20,6 +41,12 @@ public sealed class BlazorUserSessionManager : IUserSessionManager
     /// <summary>
     /// Register a new circuit for a user
     /// </summary>
+    /// <param name="username">Username to register circuit for</param>
+    /// <param name="circuitId">Unique circuit identifier (Blazor Server connection ID)</param>
+    /// <remarks>
+    /// <para>Called when user logs in or establishes new Blazor Server connection.</para>
+    /// <para><b>?? Memory Consideration:</b> Each registration consumes ~200 bytes of memory.</para>
+    /// </remarks>
     public void RegisterCircuit(string username, string circuitId)
     {
         _userCircuits.AddOrUpdate(
@@ -40,6 +67,13 @@ public sealed class BlazorUserSessionManager : IUserSessionManager
     /// <summary>
     /// Unregister a circuit for a user
     /// </summary>
+    /// <param name="username">Username to unregister circuit from</param>
+    /// <param name="circuitId">Circuit identifier to remove</param>
+    /// <remarks>
+    /// <para>Called when user logs out or circuit disconnects.</para>
+    /// <para><b>?? Important:</b> If this method is not called (e.g., browser crash), 
+    /// circuit will remain in memory until server restart, causing memory leak.</para>
+    /// </remarks>
     public void UnregisterCircuit(string username, string circuitId)
     {
         if (_userCircuits.TryGetValue(username, out var circuits))
@@ -60,6 +94,15 @@ public sealed class BlazorUserSessionManager : IUserSessionManager
     /// <summary>
     /// Terminate all sessions for a specific user
     /// </summary>
+    /// <param name="username">Username whose sessions should be terminated</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <remarks>
+    /// <para>Called when user is deactivated or requires forced logout.</para>
+    /// <para>
+    /// <b>?? Multi-Server Limitation:</b> Only terminates sessions on THIS server.
+    /// In load-balanced environments, user may still have active sessions on other servers.
+    /// </para>
+    /// </remarks>
     public Task TerminateUserSessionsAsync(string username, CancellationToken cancellationToken = default)
     {
         if (_userCircuits.TryRemove(username, out var circuits))
@@ -86,6 +129,8 @@ public sealed class BlazorUserSessionManager : IUserSessionManager
     /// <summary>
     /// Get active circuit count for a user (for monitoring/debugging)
     /// </summary>
+    /// <param name="username">Username to check</param>
+    /// <returns>Number of active circuits for the user</returns>
     public int GetActiveCircuitCount(string username)
     {
         if (_userCircuits.TryGetValue(username, out var circuits))
@@ -100,8 +145,12 @@ public sealed class BlazorUserSessionManager : IUserSessionManager
 }
 
 /// <summary>
-/// Static notifier for circuit termination callbacks
+/// Static notifier for circuit termination callbacks.
 /// </summary>
+/// <remarks>
+/// <para>Uses static dictionary to maintain callbacks across service instances.</para>
+/// <para><b>Pattern:</b> Observer pattern for circuit-to-logout mapping</para>
+/// </remarks>
 public static class CircuitTerminationNotifier
 {
     private static readonly ConcurrentDictionary<string, Action> _terminationCallbacks = new();

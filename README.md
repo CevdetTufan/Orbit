@@ -25,6 +25,12 @@ Domain-driven starter with Authorization and User aggregates, a web frontend, an
   - Blazor Server circuit tracking
   - Real-time user logout on deactivation
   - Complete architecture and flow diagrams
+- **[⚠️ Scalability Risks and Solutions](docs/scalability-risks-and-solutions.md)** *(Türkçe)*
+  - Current implementation limitations
+  - Memory and concurrency risks
+  - Multi-server deployment challenges
+  - Redis migration recommendations
+  - Performance thresholds and action items
 
 **Requirements**
 - .NET SDK `9.0+`
