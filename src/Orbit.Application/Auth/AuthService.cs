@@ -7,9 +7,9 @@ namespace Orbit.Application.Auth;
 
 internal sealed class AuthService : IAuthService
 {
-    private readonly IReadRepository<User, Guid> _users;
-    private readonly IReadRepository<Role, Guid> _roles;
-    private readonly IWriteRepository<Orbit.Domain.Security.LoginAttempt, Guid> _loginAttempts;
+    private readonly IRepository<User, Guid> _users;
+    private readonly IRepository<Role, Guid> _roles;
+    private readonly IRepository<Orbit.Domain.Security.LoginAttempt, Guid> _loginAttempts;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IUserCredentialStore _credentialStore;
@@ -17,9 +17,9 @@ internal sealed class AuthService : IAuthService
     private readonly IUnitOfWork _uow;
 
     public AuthService(
-        IReadRepository<User, Guid> users,
-        IReadRepository<Role, Guid> roles,
-        IWriteRepository<Orbit.Domain.Security.LoginAttempt, Guid> loginAttempts,
+        IRepository<User, Guid> users,
+        IRepository<Role, Guid> roles,
+        IRepository<Orbit.Domain.Security.LoginAttempt, Guid> loginAttempts,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IUserCredentialStore credentialStore,

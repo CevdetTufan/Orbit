@@ -24,7 +24,7 @@ internal sealed class UserCommands : IUserCommands
 {
     private readonly IRepository<User, Guid> _userRepository;
     private readonly IRepository<UserRole, Guid> _userRoleRepository;
-    private readonly IReadRepository<Role, Guid> _roleRepository;
+    private readonly IRepository<Role, Guid> _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUserCredentialStore _credentialStore;
@@ -33,7 +33,7 @@ internal sealed class UserCommands : IUserCommands
     public UserCommands(
         IRepository<User, Guid> userRepository,
         IRepository<UserRole, Guid> userRoleRepository,
-        IReadRepository<Role, Guid> roleRepository,
+        IRepository<Role, Guid> roleRepository,
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
         IUserCredentialStore credentialStore,

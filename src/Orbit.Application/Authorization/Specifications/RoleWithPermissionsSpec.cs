@@ -3,7 +3,7 @@ using Orbit.Domain.Common;
 
 namespace Orbit.Application.Authorization.Specifications;
 
-public class RoleWithPermissionsSpec : BaseSpecification<Role, Role>
+public class RoleWithPermissionsSpec : BaseSpecification<Role>
 {
     public RoleWithPermissionsSpec(Guid roleId) : base(r => r.Id == roleId)
     {

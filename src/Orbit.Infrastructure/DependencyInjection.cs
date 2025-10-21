@@ -25,9 +25,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Generic repositories
-        services.AddScoped(typeof(IReadRepository<,>), typeof(EfRepository<,>));
-        services.AddScoped(typeof(IWriteRepository<,>), typeof(EfRepository<,>));
+        // Generic repository: single IRepository used for both read/write
         services.AddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
 
         // Domain-specific repositories (DDD approach)

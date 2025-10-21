@@ -6,9 +6,9 @@ namespace Orbit.Infrastructure.Domain.Users;
 
 internal sealed class UserUniquenessChecker : IUserUniquenessChecker
 {
-    private readonly IReadRepository<User, Guid> _userRepository;
+    private readonly IRepository<User, Guid> _userRepository;
 
-    public UserUniquenessChecker(IReadRepository<User, Guid> userRepository)
+    public UserUniquenessChecker(IRepository<User, Guid> userRepository)
     {
         _userRepository = userRepository;
     }

@@ -2,7 +2,7 @@ using Orbit.Domain.Common;
 
 namespace Orbit.Domain.Authorization;
 
-public sealed class RolePermission : Entity<Guid>
+public sealed class RolePermission : Entity<Guid>, IAggregateRoot
 {
     public Guid RoleId { get; private set; }
     public Guid PermissionId { get; private set; }

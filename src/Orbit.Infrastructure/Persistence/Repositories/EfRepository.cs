@@ -29,8 +29,8 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 		Expression<Func<TAggregate, bool>>? predicate = null,
 		CancellationToken cancellationToken = default)
 	{
-		// ListAsync always uses AsNoTracking for read-only operations
-		IQueryable<TAggregate> query = _set.AsNoTracking();
+		// Return tracked entities by default so callers can update aggregates without surprising tracking behavior
+		IQueryable<TAggregate> query = _set; // tracked
 		if (predicate is not null)
 		{
 			query = query.Where(predicate);
@@ -49,14 +49,14 @@ internal class EfRepository<TAggregate, TId> : IRepository<TAggregate, TId>
 	public Task<bool> AnyAsync(
 		Expression<Func<TAggregate, bool>> predicate,
 		CancellationToken cancellationToken = default)
-		=> _set.AsNoTracking().AnyAsync(predicate, cancellationToken);
+		=> _set.AnyAsync(predicate, cancellationToken); // tracked query
 
 	public Task<int> CountAsync(
 		Expression<Func<TAggregate, bool>>? predicate = null,
 		CancellationToken cancellationToken = default)
 		=> predicate is null
-			? _set.AsNoTracking().CountAsync(cancellationToken)
-			: _set.AsNoTracking().CountAsync(predicate, cancellationToken);
+			? _set.CountAsync(cancellationToken)
+			: _set.CountAsync(predicate, cancellationToken);
 
 	public async Task<IReadOnlyList<TAggregate>> ListAsync(
 		ISpecification<TAggregate> specification,
