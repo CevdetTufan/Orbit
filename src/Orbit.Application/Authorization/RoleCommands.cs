@@ -1,5 +1,6 @@
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Common;
+using Orbit.Domain.Users;
 
 namespace Orbit.Application.Authorization;
 
@@ -13,13 +14,13 @@ public interface IRoleCommands
 internal sealed class RoleCommands : IRoleCommands
 {
 	private readonly IRoleRepository _roleRepository;
-	private readonly IReadRepository<Domain.Users.User, Guid> _usersRead;
+	private readonly IRepository<User, Guid> _usersRead;
 	private readonly RolePermissionDomainService _domainService;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public RoleCommands(
 		IRoleRepository roleRepository,
-		IReadRepository<Domain.Users.User, Guid> usersRead,
+		IRepository<Domain.Users.User, Guid> usersRead,
 		RolePermissionDomainService domainService,
 		IUnitOfWork unitOfWork)
 	{

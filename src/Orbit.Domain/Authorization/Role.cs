@@ -9,7 +9,8 @@ public sealed class Role : Entity<Guid>, IAggregateRoot
     public string Name { get; private set; } = null!; 
     public string? Description { get; private set; }
 
-    public IReadOnlyCollection<RolePermission> Permissions => _permissions.AsReadOnly();
+    // EXPOSE mutable collection type so EF can track additions/removals reliably
+    public ICollection<RolePermission> Permissions => _permissions;
 
     private Role() { }
 

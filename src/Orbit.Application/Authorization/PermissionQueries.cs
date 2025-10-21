@@ -13,12 +13,12 @@ public interface IPermissionQueries
 
 internal sealed class PermissionQueries : IPermissionQueries
 {
-    private readonly IReadRepository<Permission, Guid> _permissionRepository;
-    private readonly IReadRepository<Role, Guid> _roleRepository;
+    private readonly IRepository<Permission, Guid> _permissionRepository;
+    private readonly IRepository<Role, Guid> _roleRepository;
 
     public PermissionQueries(
-        IReadRepository<Permission, Guid> permissionRepository,
-        IReadRepository<Role, Guid> roleRepository)
+        IRepository<Permission, Guid> permissionRepository,
+        IRepository<Role, Guid> roleRepository)
     {
         _permissionRepository = permissionRepository;
         _roleRepository = roleRepository;

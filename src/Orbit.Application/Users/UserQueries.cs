@@ -16,9 +16,9 @@ public interface IUserQueries
 
 internal sealed class UserQueries : IUserQueries
 {
-    private readonly IReadRepository<User, Guid> _readRepository;
+    private readonly IRepository<User, Guid> _readRepository;
 
-    public UserQueries(IReadRepository<User, Guid> readRepository)
+    public UserQueries(IRepository<User, Guid> readRepository)
     {
         _readRepository = readRepository;
     }

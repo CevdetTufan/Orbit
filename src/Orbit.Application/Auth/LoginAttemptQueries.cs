@@ -14,9 +14,9 @@ public interface ILoginAttemptQueries
 
 internal sealed class LoginAttemptQueries : ILoginAttemptQueries
 {
-	private readonly IReadRepository<LoginAttempt, Guid> _loginAttempts;
+	private readonly IRepository<LoginAttempt, Guid> _loginAttempts;
 
-	public LoginAttemptQueries(IReadRepository<LoginAttempt, Guid> loginAttempts)
+	public LoginAttemptQueries(IRepository<LoginAttempt, Guid> loginAttempts)
 	{
 		_loginAttempts = loginAttempts;
 	}

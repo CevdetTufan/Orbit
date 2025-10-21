@@ -12,10 +12,10 @@ public interface IRoleQueries
 
 internal sealed class RoleQueries : IRoleQueries
 {
-	private readonly IReadRepository<Role, Guid> _roles;
-	private readonly IReadRepository<Domain.Users.User, Guid> _users;
+	private readonly IRepository<Role, Guid> _roles;
+	private readonly IRepository<Domain.Users.User, Guid> _users;
 
-	public RoleQueries(IReadRepository<Role, Guid> roles, IReadRepository<Domain.Users.User, Guid> users)
+	public RoleQueries(IRepository<Role, Guid> roles, IRepository<Domain.Users.User, Guid> users)
 	{
 		_roles = roles;
 		_users = users;
