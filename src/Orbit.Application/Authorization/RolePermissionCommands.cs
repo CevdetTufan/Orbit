@@ -14,92 +14,58 @@ public interface IRolePermissionCommands
 
 internal sealed class RolePermissionCommands : IRolePermissionCommands
 {
-	private readonly IRepository<Role, Guid> _roleReadRepository;
-	private readonly IRepository<Role, Guid> _roleWriteRepository;
-	private readonly IRepository	<Permission, Guid> _permissionRepository;
+	private readonly IRepository<Role, Guid> _roleRepository;
+	private readonly IRepository<Permission, Guid> _permissionRepository;
+	private readonly IRepository<RolePermission, Guid> _rolePermissionRepository;
 	private readonly IUnitOfWork _unitOfWork;
 
 	public RolePermissionCommands(
-		IRepository<Role, Guid> roleReadRepository,
-		IRepository<Role, Guid> roleWriteRepository,
+		IRepository<Role, Guid> roleRepository,
 		IRepository<Permission, Guid> permissionRepository,
+		IRepository<RolePermission, Guid> rolePermissionRepository,
 		IUnitOfWork unitOfWork)
 	{
-		_roleReadRepository = roleReadRepository;
-		_roleWriteRepository = roleWriteRepository;
+		_roleRepository = roleRepository;
 		_permissionRepository = permissionRepository;
+		_rolePermissionRepository = rolePermissionRepository;
 		_unitOfWork = unitOfWork;
 	}
 
 	public async Task AssignPermissionToRoleAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default)
 	{
-		try
-		{
-			// Tracked entities al - Update için gerekli
-			var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+		// if already assigned, nothing to do
+		if (role.Permissions.Any(rp => rp.PermissionId == permissionId))
+			return;
 
-			// Permission kontrolü için untracked yeterli
-			var permission = await GetUntrackedPermissionAsync(permissionId, cancellationToken);
+		var permission = await GetTrackedPermissionAsync(permissionId, cancellationToken);
 
-			// Duplicate kontrolü
-			if (role.Permissions.Any(rp => rp.PermissionId == permissionId))
-			{
-				return; // Zaten atanmýþ
-			}
-
-			role.Grant(permission);
-
-			// Ensure EF Core knows about modifications to aggregate
-			_roleWriteRepository.Update(role);
-
-			await _unitOfWork.SaveChangesAsync(cancellationToken);
-		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
-		{
-			await HandleConcurrencyAndRetryAsync(async () =>
-			{
-				var freshRole = await GetTrackedRoleAsync(roleId, cancellationToken);
-				var freshPermission = await GetUntrackedPermissionAsync(permissionId, cancellationToken);
-
-				if (!freshRole.Permissions.Any(rp => rp.PermissionId == permissionId))
-				{
-					freshRole.Grant(freshPermission);
-					_roleWriteRepository.Update(freshRole);
-					await _unitOfWork.SaveChangesAsync(cancellationToken);
-				}
-			});
-		}
+		// Create join entity and add directly to repository so EF treats it as Added
+		var link = RolePermission.Create(role, permission);
+		await _rolePermissionRepository.AddAsync(link, cancellationToken);
+		await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task RemovePermissionFromRoleAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default)
 	{
-		try
+		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+
+		var link = role.Permissions.FirstOrDefault(rp => rp.PermissionId == permissionId);
+		if (link != null)
 		{
-			var role = await GetTrackedRoleAsync(roleId, cancellationToken);
-
-			// Permission'ýn mevcut olup olmadýðýný kontrol et
-			if (!role.Permissions.Any(rp => rp.PermissionId == permissionId))
-			{
-				return; // Zaten yok
-			}
-
-			role.Revoke(permissionId);
-			_roleWriteRepository.Update(role);
+			// remove via repository so EF marks as Deleted
+			_rolePermissionRepository.Remove(link);
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
+			return;
 		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
-		{
-			await HandleConcurrencyAndRetryAsync(async () =>
-			{
-				var freshRole = await GetTrackedRoleAsync(roleId, cancellationToken);
 
-				if (freshRole.Permissions.Any(rp => rp.PermissionId == permissionId))
-				{
-					freshRole.Revoke(permissionId);
-					_roleWriteRepository.Update(freshRole);
-					await _unitOfWork.SaveChangesAsync(cancellationToken);
-				}
-			});
+		// If not loaded on role, try to fetch the link directly and remove
+		var links = await _rolePermissionRepository.ListAsync(rp => rp.RoleId == roleId && rp.PermissionId == permissionId, cancellationToken);
+		var found = links.FirstOrDefault();
+		if (found != null)
+		{
+			_rolePermissionRepository.Remove(found);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 		}
 	}
 
@@ -108,41 +74,21 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
 		var permissionIdsList = permissionIds.ToList();
 		if (!permissionIdsList.Any()) return;
 
-		try
+		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+		var permissions = await GetTrackedPermissionsAsync(permissionIdsList, cancellationToken);
+
+		var permissionsToGrant = permissions
+			.Where(permission => !role.Permissions.Any(rp => rp.PermissionId == permission.Id))
+			.ToList();
+
+		foreach (var p in permissionsToGrant)
 		{
-			var role = await GetTrackedRoleAsync(roleId, cancellationToken);
-			var permissions = await GetUntrackedPermissionsAsync(permissionIdsList, cancellationToken);
-
-			var permissionsToGrant = permissions
-				.Where(permission => !role.Permissions.Any(rp => rp.PermissionId == permission.Id))
-				.ToList();
-
-			if (permissionsToGrant.Any())
-			{
-				permissionsToGrant.ForEach(p => role.Grant(p));
-				_roleWriteRepository.Update(role);
-				await _unitOfWork.SaveChangesAsync(cancellationToken);
-			}
+			var link = RolePermission.Create(role, p);
+			await _rolePermissionRepository.AddAsync(link, cancellationToken);
 		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
-		{
-			await HandleConcurrencyAndRetryAsync(async () =>
-			{
-				var freshRole = await GetTrackedRoleAsync(roleId, cancellationToken);
-				var freshPermissions = await GetUntrackedPermissionsAsync(permissionIdsList, cancellationToken);
 
-				var permissionsToGrant = freshPermissions
-					.Where(permission => !freshRole.Permissions.Any(rp => rp.PermissionId == permission.Id))
-					.ToList();
-
-				if (permissionsToGrant.Any())
-				{
-					permissionsToGrant.ForEach(p => freshRole.Grant(p));
-					_roleWriteRepository.Update(freshRole);
-					await _unitOfWork.SaveChangesAsync(cancellationToken);
-				}
-			});
-		}
+		if (permissionsToGrant.Any())
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task RemoveMultiplePermissionsFromRoleAsync(Guid roleId, IEnumerable<Guid> permissionIds, CancellationToken cancellationToken = default)
@@ -150,134 +96,80 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
 		var permissionIdsList = permissionIds.ToList();
 		if (!permissionIdsList.Any()) return;
 
-		try
+		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+
+		var permissionIdsToRevoke = permissionIdsList
+			.Where(permissionId => role.Permissions.Any(rp => rp.PermissionId == permissionId))
+			.ToList();
+
+		if (permissionIdsToRevoke.Any())
 		{
-			var role = await GetTrackedRoleAsync(roleId, cancellationToken);
-
-			var permissionIdsToRevoke = permissionIdsList
-				.Where(permissionId => role.Permissions.Any(rp => rp.PermissionId == permissionId))
-				.ToList();
-
-			if (permissionIdsToRevoke.Any())
+			foreach (var id in permissionIdsToRevoke)
 			{
-				permissionIdsToRevoke.ForEach(role.Revoke);
-				_roleWriteRepository.Update(role);
-				await _unitOfWork.SaveChangesAsync(cancellationToken);
+				var link = role.Permissions.First(rp => rp.PermissionId == id);
+				_rolePermissionRepository.Remove(link);
 			}
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
+			return;
 		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
+
+		// If none loaded, delete by query
+		var links = await _rolePermissionRepository.ListAsync(rp => rp.RoleId == roleId && permissionIdsList.Contains(rp.PermissionId), cancellationToken);
+		foreach (var l in links)
 		{
-			await HandleConcurrencyAndRetryAsync(async () =>
-			{
-				var freshRole = await GetTrackedRoleAsync(roleId, cancellationToken);
-
-				var permissionIdsToRevoke = permissionIdsList
-					.Where(permissionId => freshRole.Permissions.Any(rp => rp.PermissionId == permissionId))
-					.ToList();
-
-				if (permissionIdsToRevoke.Any())
-				{
-					permissionIdsToRevoke.ForEach(freshRole.Revoke);
-					_roleWriteRepository.Update(freshRole);
-					await _unitOfWork.SaveChangesAsync(cancellationToken);
-				}
-			});
+			_rolePermissionRepository.Remove(l);
 		}
+		if (links.Any())
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task ReplaceRolePermissionsAsync(Guid roleId, IEnumerable<Guid> permissionIds, CancellationToken cancellationToken = default)
 	{
 		var permissionIdsList = permissionIds.ToList();
 
-		try
+		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+
+		// Remove existing links
+		var existingLinks = role.Permissions.ToList();
+		foreach (var l in existingLinks)
 		{
-			var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+			_rolePermissionRepository.Remove(l);
+		}
 
-			// Remove all existing permissions
-			var existingPermissionIds = role.Permissions.Select(rp => rp.PermissionId).ToList();
-			existingPermissionIds.ForEach(role.Revoke);
-
-			// Add new permissions if any
-			if (permissionIdsList.Any())
+		// Add new ones
+		if (permissionIdsList.Any())
+		{
+			var permissions = await GetTrackedPermissionsAsync(permissionIdsList, cancellationToken);
+			foreach (var p in permissions)
 			{
-				var permissions = await GetUntrackedPermissionsAsync(permissionIdsList, cancellationToken);
-				permissions.ToList().ForEach(p => role.Grant(p));
-				_roleWriteRepository.Update(role);
+				var link = RolePermission.Create(role, p);
+				await _rolePermissionRepository.AddAsync(link, cancellationToken);
 			}
-
-			await _unitOfWork.SaveChangesAsync(cancellationToken);
 		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
-		{
-			await HandleConcurrencyAndRetryAsync(async () =>
-			{
-				var freshRole = await GetTrackedRoleAsync(roleId, cancellationToken);
 
-				// Remove all existing permissions
-				var existingPermissionIds = freshRole.Permissions.Select(rp => rp.PermissionId).ToList();
-				existingPermissionIds.ForEach(freshRole.Revoke);
-
-				// Add new permissions if any
-				if (permissionIdsList.Any())
-				{
-					var permissions = await GetUntrackedPermissionsAsync(permissionIdsList, cancellationToken);
-					permissions.ToList().ForEach(p => freshRole.Grant(p));
-					_roleWriteRepository.Update(freshRole);
-				}
-
-				await _unitOfWork.SaveChangesAsync(cancellationToken);
-			});
-		}
+		await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}
 
 	// Helper methods
 	private async Task<Role> GetTrackedRoleAsync(Guid roleId, CancellationToken cancellationToken)
 	{
-		// GetByIdAsync ile tracked entity al (Update için gerekli)
-		return await _roleReadRepository.GetByIdAsync(roleId, cancellationToken)
-			   ?? throw new InvalidOperationException($"Role with ID {roleId} not found");
+		return await _roleRepository.GetByIdAsync(roleId, cancellationToken)
+				?? throw new InvalidOperationException($"Role with ID {roleId} not found");
 	}
 
-	private async Task<Permission> GetUntrackedPermissionAsync(Guid permissionId, CancellationToken cancellationToken)
+	private async Task<Permission> GetTrackedPermissionAsync(Guid permissionId, CancellationToken cancellationToken)
 	{
-		// Permission sadece okuma için kullanýlýyor, untracked yeterli
-		var permissions = await _permissionRepository.ListAsync(p => p.Id == permissionId, cancellationToken);
-		return permissions.FirstOrDefault() ?? throw new InvalidOperationException($"Permission with ID {permissionId} not found");
+		return await _permissionRepository.GetByIdAsync(permissionId, cancellationToken)
+			?? throw new InvalidOperationException($"Permission with ID {permissionId} not found");
 	}
 
-	private async Task<IReadOnlyList<Permission>> GetUntrackedPermissionsAsync(IEnumerable<Guid> permissionIds, CancellationToken cancellationToken)
+	private async Task<IReadOnlyList<Permission>> GetTrackedPermissionsAsync(IEnumerable<Guid> permissionIds, CancellationToken cancellationToken)
 	{
-		// Permissions sadece okuma için kullanýlýyor, untracked yeterli
 		var permissions = await _permissionRepository.ListAsync(p => permissionIds.Contains(p.Id), cancellationToken);
 
 		if (permissions.Count != permissionIds.Count())
 			throw new InvalidOperationException("One or more permissions not found");
 
 		return permissions;
-	}
-
-	private static async Task HandleConcurrencyAndRetryAsync(Func<Task> retryOperation)
-	{
-		try
-		{
-			await retryOperation();
-		}
-		catch (Exception ex) when (IsConcurrencyException(ex))
-		{
-			throw new InvalidOperationException(
-				"The operation could not be completed due to concurrent modifications. Please refresh and try again.",
-				ex);
-		}
-	}
-
-	private static bool IsConcurrencyException(Exception ex)
-	{
-		return ex.Message.Contains("database operation was expected to affect") ||
-			   ex.Message.Contains("concurrency") ||
-			   ex.Message.Contains("cannot be tracked because another instance") ||
-			   ex.Message.Contains("is already being tracked") ||
-			   ex.GetType().Name.Contains("Concurrency") ||
-			   ex.GetType().Name.Contains("DbUpdateConcurrency") ||
-			   ex.GetType().Name.Contains("InvalidOperation");
 	}
 }
