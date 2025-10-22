@@ -15,9 +15,9 @@ public class AppDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-    }
+	public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+	protected override void OnModelCreating(ModelBuilder modelBuilder)
+	{
+		modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+	}
 }
