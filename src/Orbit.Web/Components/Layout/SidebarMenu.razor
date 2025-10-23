@@ -1,0 +1,57 @@
+@using Orbit.Application.Navigation.Models
+@using Microsoft.AspNetCore.Components.Routing
+@using Orbit.Web.Components.Layout
+
+<div class="flex-1 p-3 space-y-1">
+    @if (Items is null)
+    {
+        <p class="text-sm text-subtext-light dark:text-subtext-dark">Yükleniyor...</p>
+    }
+    else
+    {
+        @foreach (var root in Items.OrderBy(m => m.Order))
+        {
+            if (!root.Visible) continue;
+
+            <NavLink href="@(root.Url ?? "#")"
+                     title="@root.Title"
+                     class="@NavItemClass"
+                     ActiveClass="@ActiveNavClass"
+                     Match="@(string.Equals(root.Url, "/", StringComparison.Ordinal) ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                <span class="relative flex items-center gap-3">
+                    <Icon Name="@(root.Icon ?? string.Empty)" CssClass="shrink-0" Size="22" />
+                    <span class="text-sm font-medium @(IsCollapsed ? "hidden" : "inline")">@root.Title</span>
+                </span>
+            </NavLink>
+
+            @if (root.Children?.Count > 0)
+            {
+                <div class="pl-4">
+                    @foreach (var child in root.Children.OrderBy(c => c.Order))
+                    {
+                        if (!child.Visible) continue;
+
+                        <NavLink href="@(child.Url ?? "#")"
+                                 title="@child.Title"
+                                 class="@NavItemClass"
+                                 ActiveClass="@ActiveNavClass"
+                                 Match="@(string.Equals(child.Url, "/", StringComparison.Ordinal) ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                            <span class="relative flex items-center gap-3">
+                                <Icon Name="@(child.Icon ?? string.Empty)" CssClass="shrink-0" Size="18" />
+                                <span class="text-sm font-medium @(IsCollapsed ? "hidden" : "inline")">@child.Title</span>
+                            </span>
+                        </NavLink>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<MenuDto>? Items { get; set; }
+    [Parameter] public bool IsCollapsed { get; set; }
+
+    private string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20 ring-1 ring-primary/20";
+    private string NavItemClass => $"group relative flex items-center {(IsCollapsed ? "justify-center " : string.Empty)}gap-3 px-3.5 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 transition-colors";
+}

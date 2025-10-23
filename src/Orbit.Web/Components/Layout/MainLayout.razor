@@ -1,4 +1,7 @@
 @inherits LayoutComponentBase
+@using Orbit.Web.Components.Layout
+@using Orbit.Application.Navigation
+@using Orbit.Application.Navigation.Models
 
 <HeadContent>
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
@@ -22,24 +25,10 @@
                     </svg>
                 </button>
             </div>
-            <nav class="flex-1 p-3 space-y-1">
-                <NavLink href="/" title="Anasayfa" class="@NavItemClass" ActiveClass="@ActiveNavClass" Match="NavLinkMatch.All">
-                    <span class="relative flex items-center gap-3">
-                        <svg class="shrink-0" fill="currentColor" height="22" viewBox="0 0 256 256" width="22" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48a16,16,0,0,1,21.66,0l80,75.48A16,16,0,0,1,224,115.55Z"></path>
-                        </svg>
-                        <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Anasayfa</span>
-                    </span>
-                </NavLink>
-                <NavLink href="/kullanici-yonetimi" title="Kullanıcı Yönetimi" class="@NavItemClass" ActiveClass="@ActiveNavClass">
-                    <span class="relative flex items-center gap-3">
-                        <svg class="shrink-0" fill="currentColor" height="22" viewBox="0 0 256 256" width="22" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
-                        </svg>
-                        <span class="text-sm font-medium @(isCollapsed ? "hidden" : "inline")">Kullanıcı Yönetimi</span>
-                    </span>
-                </NavLink>
-            </nav>
+
+            <!-- Sidebar menu component (replaces inline nav) -->
+            <SidebarMenu Items="_menuTree" IsCollapsed="isCollapsed" />
+
             <div class="p-3 border-t border-border-light dark:border-border-dark">
                 <button title="Tema Değiştir" aria-label="Tema Değiştir"
                         class="w-full flex items-center justify-center rounded-md p-2 border border-border-light dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20"
@@ -103,6 +92,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Orbit.Web.Security
 @inject CircuitAuthenticationStateProvider CircuitAuth
+@inject Orbit.Application.Navigation.IMenuQueryHandler MenuHandler
 @code {
     bool isCollapsed = false;
     bool isAccountOpen = false;
@@ -121,6 +111,22 @@
     string HeaderJustifyClass => isCollapsed ? "justify-center" : "justify-between";
     string ActiveNavClass => "bg-primary/10 text-primary dark:bg-primary/20 ring-1 ring-primary/20";
     string NavItemClass => $"group relative flex items-center {(isCollapsed ? "justify-center " : string.Empty)}gap-3 px-3.5 py-2 rounded-lg hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 transition-colors";
+
+    private IReadOnlyList<MenuDto>? _menuTree;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _menuTree = await MenuHandler.HandleGetTreeAsync();
+        }
+        catch
+        {
+            _menuTree = Array.Empty<MenuDto>();
+        }
+
+        await base.OnInitializedAsync();
+    }
 
     async Task PersistSidebarAsync()
     {
