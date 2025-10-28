@@ -38,11 +38,13 @@ internal sealed class MenuConfiguration : IEntityTypeConfiguration<Menu>
             .OnDelete(DeleteBehavior.Restrict);
 
         // Permission relationship: Menu -> Permission (no navigation collection on Permission)
-        // Use the strongly-typed FK property to avoid creating a shadow property
+        // PermissionId is nullable; configure FK as optional
+        builder.Property(m => m.PermissionId)
+            .IsRequired(false);
+
         builder.HasOne(m => m.Permission)
             .WithMany()
             .HasForeignKey(m => m.PermissionId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes

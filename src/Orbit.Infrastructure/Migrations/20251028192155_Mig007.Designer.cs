@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Orbit.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Orbit.Infrastructure.Persistence;
 namespace Orbit.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251028192155_Mig007")]
+    partial class Mig007
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,7 +114,7 @@ namespace Orbit.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("PermissionId")
+                    b.Property<Guid>("PermissionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Title")
@@ -285,7 +288,8 @@ namespace Orbit.Infrastructure.Migrations
                     b.HasOne("Orbit.Domain.Authorization.Permission", "Permission")
                         .WithMany()
                         .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Parent");
 

@@ -22,7 +22,7 @@ internal sealed class MenuCommands : IMenuCommands
 
     public async Task<Guid> CreateAsync(
         string title,
-        Guid permissionId,
+        Guid? permissionId,
         string? url = null,
         string? description = null,
         Guid? parentId = null,
@@ -31,7 +31,12 @@ internal sealed class MenuCommands : IMenuCommands
         string? icon = null,
         CancellationToken cancellationToken = default)
     {
-        var permission = await GetTrackedPermissionAsync(permissionId, cancellationToken);
+        Permission? permission = null;
+        if (permissionId.HasValue)
+        {
+            permission = await GetTrackedPermissionAsync(permissionId.Value, cancellationToken);
+        }
+
         Menu? parent = null;
         if (parentId is not null)
         {
@@ -47,7 +52,7 @@ internal sealed class MenuCommands : IMenuCommands
     public async Task UpdateAsync(
         Guid id,
         string title,
-        Guid permissionId,
+        Guid? permissionId,
         string? url = null,
         string? description = null,
         Guid? parentId = null,
@@ -66,7 +71,11 @@ internal sealed class MenuCommands : IMenuCommands
         // permission
         if (menu.PermissionId != permissionId)
         {
-            var permission = await GetTrackedPermissionAsync(permissionId, cancellationToken);
+            Permission? permission = null;
+            if (permissionId.HasValue)
+            {
+                permission = await GetTrackedPermissionAsync(permissionId.Value, cancellationToken);
+            }
             menu.SetPermission(permission);
         }
 

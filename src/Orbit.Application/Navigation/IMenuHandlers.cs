@@ -21,7 +21,7 @@ public interface IMenuQueryHandler
 public sealed class CreateMenuCommand
 {
     public string Title { get; init; } = null!;
-    public Guid PermissionId { get; init; }
+    public Guid? PermissionId { get; init; }
     public string? Url { get; init; }
     public string? Description { get; init; }
     public Guid? ParentId { get; init; }
@@ -34,7 +34,7 @@ public sealed class UpdateMenuCommand
 {
     public Guid Id { get; init; }
     public string Title { get; init; } = null!;
-    public Guid PermissionId { get; init; }
+    public Guid? PermissionId { get; init; }
     public string? Url { get; init; }
     public string? Description { get; init; }
     public Guid? ParentId { get; init; }

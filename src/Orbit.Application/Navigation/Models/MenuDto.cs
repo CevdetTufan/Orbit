@@ -2,7 +2,7 @@ namespace Orbit.Application.Navigation.Models;
 
 public sealed class MenuDto
 {
-    public MenuDto(Guid id, string title, Guid permissionId, string? url = null, string? description = null, Guid? parentId = null, int order = 0, bool visible = true, string? icon = null)
+    public MenuDto(Guid id, string title, Guid? permissionId, string? url = null, string? description = null, Guid? parentId = null, int order = 0, bool visible = true, string? icon = null)
     {
         Id = id;
         Title = title;
@@ -20,7 +20,7 @@ public sealed class MenuDto
     public string Title { get; }
     public string? Url { get; }
     public string? Description { get; }
-    public Guid PermissionId { get; }
+    public Guid? PermissionId { get; }
     public Guid? ParentId { get; }
     public int Order { get; }
     public bool Visible { get; }
