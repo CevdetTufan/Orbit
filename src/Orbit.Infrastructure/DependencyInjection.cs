@@ -42,6 +42,7 @@ public static class DependencyInjection
 
         // Data seeding
         services.AddScoped<IDataSeeder, UserDataSeeder>();
+        services.AddScoped<IDataSeeder, MenuDataSeeder>();
 
         return services;
     }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Orbit.Domain.Authorization;
 using Orbit.Domain.Users;
 using Orbit.Domain.Security;
+using Orbit.Domain.Navigation;
 
 namespace Orbit.Infrastructure.Persistence;
 
@@ -16,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 	public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+	public DbSet<Menu> Menus => Set<Menu>();
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

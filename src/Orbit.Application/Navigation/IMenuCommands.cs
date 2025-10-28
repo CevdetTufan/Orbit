@@ -7,7 +7,7 @@ public interface IMenuCommands
     /// </summary>
     Task<Guid> CreateAsync(
         string title,
-        Guid permissionId,
+        Guid? permissionId,
         string? url = null,
         string? description = null,
         Guid? parentId = null,
@@ -19,7 +19,7 @@ public interface IMenuCommands
     Task UpdateAsync(
         Guid id,
         string title,
-        Guid permissionId,
+        Guid? permissionId,
         string? url = null,
         string? description = null,
         Guid? parentId = null,

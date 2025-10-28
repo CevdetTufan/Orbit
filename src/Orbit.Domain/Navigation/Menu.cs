@@ -18,9 +18,9 @@ public sealed class Menu : Entity<Guid>, IAggregateRoot
 	// Expose mutable collection so EF can track additions/removals reliably
 	public ICollection<Menu> Children => _children;
 
-	// Permission link (each menu baðlý olduðu yetkiye sahip)
-	public Guid PermissionId { get; private set; }
-	public Permission Permission { get; private set; } = null!;
+	// Permission link (each menu baðlý olduðu yetkiye sahip) - nullable
+	public Guid? PermissionId { get; private set; }
+	public Permission? Permission { get; private set; }
 
 	// UI / ordering fields
 	public int Order { get; private set; }
@@ -29,14 +29,14 @@ public sealed class Menu : Entity<Guid>, IAggregateRoot
 
 	private Menu() { }
 
-	private Menu(Guid id, string title, Permission permission, string? url = null, string? description = null, Guid? parentId = null, int order = 0, bool visible = true, string? icon = null)
+	private Menu(Guid id, string title, Permission? permission, string? url = null, string? description = null, Guid? parentId = null, int order = 0, bool visible = true, string? icon = null)
 		: base(id)
 	{
 		Title = ValidateTitle(title);
 		Url = url?.Trim();
 		Description = description?.Trim();
-		Permission = permission ?? throw new ArgumentNullException(nameof(permission));
-		PermissionId = permission.Id;
+		Permission = permission;
+		PermissionId = permission?.Id;
 		ParentId = parentId;
 
 		Order = ValidateOrder(order);
@@ -44,7 +44,7 @@ public sealed class Menu : Entity<Guid>, IAggregateRoot
 		Icon = ValidateIcon(icon);
 	}
 
-	public static Menu Create(string title, Permission permission, string? url = null, string? description = null, Menu? parent = null, int order = 0, bool visible = true, string? icon = null)
+	public static Menu Create(string title, Permission? permission = null, string? url = null, string? description = null, Menu? parent = null, int order = 0, bool visible = true, string? icon = null)
 		=> new(Guid.NewGuid(), title, permission, url, description, parent?.Id, order, visible, icon);
 
 	public void Rename(string title) => Title = ValidateTitle(title);
@@ -64,10 +64,10 @@ public sealed class Menu : Entity<Guid>, IAggregateRoot
 		ParentId = parent?.Id;
 	}
 
-	public void SetPermission(Permission permission)
+	public void SetPermission(Permission? permission)
 	{
-		Permission = permission ?? throw new ArgumentNullException(nameof(permission));
-		PermissionId = permission.Id;
+		Permission = permission;
+		PermissionId = permission?.Id;
 	}
 
 	/// <summary>
