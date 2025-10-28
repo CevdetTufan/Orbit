@@ -6,6 +6,7 @@ using Orbit.Application.Account;
 using Orbit.Application.Authorization;
 using Orbit.Application.Common;
 using Orbit.Domain.Users.Events;
+using Orbit.Application.Navigation;
 
 namespace Orbit.Application;
 
@@ -23,6 +24,12 @@ public static class DependencyInjection
         services.AddScoped<IRoleCommands, RoleCommands>();
         services.AddScoped<IPermissionQueries, PermissionQueries>();
         services.AddScoped<IRolePermissionCommands, RolePermissionCommands>();
+
+        // Navigation menu services
+        services.AddScoped<IMenuCommands, MenuCommands>();
+        services.AddScoped<IMenuQueries, MenuQueries>();
+        services.AddScoped<IMenuCommandHandler, MenuCommandHandler>();
+        services.AddScoped<IMenuQueryHandler, MenuQueryHandler>();
 
         // Domain Event Infrastructure
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
