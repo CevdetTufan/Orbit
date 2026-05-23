@@ -50,6 +50,9 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
 	{
 		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
 
+		if (role.IsSystem)
+			throw new InvalidOperationException("Cannot revoke permissions from system role.");
+
 		var link = role.Permissions.FirstOrDefault(rp => rp.PermissionId == permissionId);
 		if (link != null)
 		{
@@ -98,6 +101,9 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
 
 		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
 
+		if (role.IsSystem)
+			throw new InvalidOperationException("Cannot revoke permissions from system role.");
+
 		var permissionIdsToRevoke = permissionIdsList
 			.Where(permissionId => role.Permissions.Any(rp => rp.PermissionId == permissionId))
 			.ToList();
@@ -128,6 +134,9 @@ internal sealed class RolePermissionCommands : IRolePermissionCommands
 		var permissionIdsList = permissionIds.ToList();
 
 		var role = await GetTrackedRoleAsync(roleId, cancellationToken);
+
+		if (role.IsSystem)
+			throw new InvalidOperationException("Cannot revoke permissions from system role.");
 
 		// Remove existing links
 		var existingLinks = role.Permissions.ToList();
